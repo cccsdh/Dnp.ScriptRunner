@@ -1,7 +1,5 @@
 # ScriptRunner
 
-![Build Status](https://github.com/cccsdh/ScriptRunner/actions/workflows/dotnet.yml/badge.svg)
-
 ScriptRunner is a .NET 8 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
 
 
@@ -43,19 +41,19 @@ dotnet ./bin/Release/net8.0/ScriptRunner.exe
 ## Examples
 
 Main Screen:
-![Example usage screenshot](images/MainScreen.png)
+![Example usage screenshot](ScriptRunner/images/MainScreen.png)
 
 Connection Screen:
-![Example usage screenshot](images/Connection.png)
+![Example usage screenshot](ScriptRunner/images/Connection.png)
 
 Script Management Screen:
-![Example usage screenshot](images/Scripts.png)
+![Example usage screenshot](ScriptRunner/images/Scripts.png)
 
 Script Selection Screen:
-![Example usage screenshot](images/ScriptSelection.png)
+![Example usage screenshot](ScriptRunner/images/ScriptSelection.png)
 
 End of Run Screen:
-![Example usage screenshot](images/EndOfRun.png)
+![Example usage screenshot](ScriptRunner/images/EndOfRun.png)
 
 
 ## Contributing
