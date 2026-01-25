@@ -1,6 +1,6 @@
 # ScriptRunner
 
-[![.NET Build](https://github.com/<OWNER>/<REPO>/actions/workflows/dotnet-build.yml/badge.svg)](https://github.com/<OWNER>/<REPO>/actions/workflows/dotnet-build.yml)
+[![.NET Build and Publish](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml)
 
 ScriptRunner is a .NET 8 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
 
