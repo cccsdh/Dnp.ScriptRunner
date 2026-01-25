@@ -27,7 +27,7 @@ using System.Diagnostics;
 namespace Dnp.ScriptRunner
 {
     // Settings storage
-    class Settings
+    public class Settings
     {
         public Dictionary<string, List<string>> Connections { get; set; } = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, List<string>> Directories { get; set; } = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
