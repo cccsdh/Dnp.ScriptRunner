@@ -1,0 +1,2 @@
+./01_create_db_and_schema.sql
+./02_insert_countries.sql
