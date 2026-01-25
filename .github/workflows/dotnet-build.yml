@@ -44,6 +44,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const fs = require('fs');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
@@ -66,14 +67,17 @@ jobs:
               nextVersion = `${major}.${minor}.${patchStr}`;
             }
 
-            // return the version so github-script sets it as the step result
+            // expose version to subsequent steps via GITHUB_ENV and as step output
+            if (process.env.GITHUB_ENV) {
+              fs.appendFileSync(process.env.GITHUB_ENV, `VERSION=${nextVersion}\n`);
+            }
             return nextVersion;
 
       - name: Zip publish
         id: zip
         run: |
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
-          $version = "${{ steps.determine-version.outputs.result }}"
+          $version = $env:VERSION
           $zipname = "ScriptRunner-$version.zip"
           if (Test-Path ./artifacts/$zipname) { Remove-Item -Force ./artifacts/$zipname }
           Compress-Archive -Path ./artifacts/publish/* -DestinationPath ./artifacts/$zipname
@@ -83,10 +87,10 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ steps.determine-version.outputs.result }}
-          release_name: Release ${{ steps.determine-version.outputs.result }}
+          tag_name: v${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
           body: |
-            Automated release created by CI for version ${{ steps.determine-version.outputs.result }}.
+            Automated release created by CI for version ${{ env.VERSION }}.
           draft: false
           prerelease: false
         env:
@@ -96,8 +100,8 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/ScriptRunner-${{ steps.determine-version.outputs.result }}.zip
-          asset_name: ScriptRunner-${{ steps.determine-version.outputs.result }}.zip
+          asset_path: ./artifacts/ScriptRunner-${{ env.VERSION }}.zip
+          asset_name: ScriptRunner-${{ env.VERSION }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
