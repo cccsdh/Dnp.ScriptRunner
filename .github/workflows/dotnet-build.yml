@@ -7,6 +7,11 @@ on:
     branches: [ main, master ]
   workflow_dispatch: {}
 
+permissions:
+  contents: write # needed to create/delete tags and upload release assets
+  packages: write
+  actions: read
+
 jobs:
   build:
     runs-on: windows-latest
@@ -33,6 +38,107 @@ jobs:
       - name: Publish exe
         run: |
           dotnet publish --configuration Release -r win-x64 --self-contained false -o ./artifacts/publish
+
+      - name: Determine next version
+        id: determine-version
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // get up to 100 releases (should be plenty for our needs)
+            const releases = await github.rest.repos.listReleases({ owner, repo, per_page: 100 });
+
+            // filter out drafts / prereleases and sort by created_at desc
+            const published = releases.data
+              .filter(r => !r.draft && !r.prerelease)
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            let nextVersion = '1.0.00';
+            if (published.length > 0) {
+              const latestTag = published[0].tag_name.startsWith('v') ? published[0].tag_name.slice(1) : published[0].tag_name;
+              const parts = latestTag.split('.');
+              const major = parseInt(parts[0] || '1', 10);
+              const minor = parseInt(parts[1] || '0', 10);
+              const patch = parseInt(parts[2] || '0', 10) + 1;
+              const patchStr = String(patch).padStart(2, '0');
+              nextVersion = `${major}.${minor}.${patchStr}`;
+            }
+
+            // return the version so github-script sets it as the step result
+            return nextVersion;
+
+      - name: Zip publish
+        id: zip
+        run: |
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          $version = "${{ steps.determine-version.outputs.result }}"
+          $zipname = "ScriptRunner-$version.zip"
+          if (Test-Path ./artifacts/$zipname) { Remove-Item -Force ./artifacts/$zipname }
+          Compress-Archive -Path ./artifacts/publish/* -DestinationPath ./artifacts/$zipname
+        shell: pwsh
+
+      - name: Create GitHub release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.determine-version.outputs.result }}
+          release_name: Release ${{ steps.determine-version.outputs.result }}
+          body: |
+            Automated release created by CI for version ${{ steps.determine-version.outputs.result }}.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/ScriptRunner-${{ steps.determine-version.outputs.result }}.zip
+          asset_name: ScriptRunner-${{ steps.determine-version.outputs.result }}.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prune old releases (keep last 5)
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const releases = await github.rest.repos.listReleases({ owner, repo, per_page: 100 });
+            const published = releases.data
+              .filter(r => !r.draft && !r.prerelease)
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            const keep = 5;
+            if (published.length <= keep) {
+              console.log(`No pruning needed, total published releases: ${published.length}`);
+              return;
+            }
+
+            const toDelete = published.slice(keep);
+            for (const rel of toDelete) {
+              console.log(`Deleting release id=${rel.id} tag=${rel.tag_name}`);
+              try {
+                await github.rest.repos.deleteRelease({ owner, repo, release_id: rel.id });
+              } catch (err) {
+                console.warn(`Failed to delete release ${rel.id}: ${err}`);
+              }
+
+              // also try deleting the git tag ref
+              const tagRef = `tags/${rel.tag_name.startsWith('v') ? rel.tag_name : rel.tag_name}`;
+              try {
+                await github.rest.git.deleteRef({ owner, repo, ref: tagRef });
+              } catch (err) {
+                console.warn(`Failed to delete git ref ${tagRef}: ${err}`);
+              }
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
