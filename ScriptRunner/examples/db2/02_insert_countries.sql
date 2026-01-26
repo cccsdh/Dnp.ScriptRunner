@@ -4,7 +4,7 @@
 -- If not connected to the desired schema, qualify table with schema name, e.g. WORLD.Countries
 -- If connected to the WORLD database but not the WORLD schema, you can use:
 -- INSERT INTO WORLD.Countries (Name, Capital, Population) VALUES
-INSERT INTO Countries (Name, Capital, Population) VALUES
+INSERT INTO World.Countries (Name, Capital, Population) VALUES
 ('China','Beijing',1402112000),
 ('India','New Delhi',1366417754),
 ('United States','Washington, D.C.',331002651),

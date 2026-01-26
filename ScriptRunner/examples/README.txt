@@ -25,7 +25,7 @@ examples/
     01_create_db_and_schema.sql
     02_insert_countries.sql
     oracle_Scripts.txt
-  db2/ (eample has not been verified)
+  db2/ (Verified)
     01_create_db_and_schema.sql
     02_insert_countries.sql
     db2_Scripts.txt
