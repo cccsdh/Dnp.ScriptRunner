@@ -1,0 +1,7 @@
+﻿[2026-01-31 14:43:26] (1/1) Queuing mysql_Scripts.txt
+[2026-01-31 14:43:26] Processing list file: mysql_Scripts.txt
+[2026-01-31 14:43:26] Executing SQL file: 01_create_db_and_schema.sql
+[2026-01-31 14:43:26] OK Statement 1/1
+[2026-01-31 14:43:26] Executing SQL file: 02_insert_countries.sql
+[2026-01-31 14:43:26] OK Statement 1/1
+[2026-01-31 14:43:26] All selected scripts processed.

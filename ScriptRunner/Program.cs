@@ -23,25 +23,42 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using System.Data.Common;
+using System.Xml;
 
 namespace Dnp.ScriptRunner
 {
-    // Settings storage
+    // Settings storage (added EmbeddedFileMarkers)
     public class Settings
     {
         public Dictionary<string, List<string>> Connections { get; set; } = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, List<string>> Directories { get; set; } = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string>? EmbeddedFileMarkers { get; set; } = null;
+        public bool EnableEmbeddedTypeDetection { get; set; } = true;
 
         private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "script-runner-settings.json");
+        private static string AppSettingsPath => Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 
         public static Settings Load()
         {
             try
             {
-                if (!File.Exists(SettingsPath)) return new Settings();
-                var json = File.ReadAllText(SettingsPath);
-                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                return JsonSerializer.Deserialize<Settings>(json, opts) ?? new Settings();
+                // Prefer script-runner-settings.json for user overrides; fall back to appsettings.json shipped with app
+                if (File.Exists(SettingsPath))
+                {
+                    var json = File.ReadAllText(SettingsPath);
+                    var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    return JsonSerializer.Deserialize<Settings>(json, opts) ?? new Settings();
+                }
+
+                if (File.Exists(AppSettingsPath))
+                {
+                    var json = File.ReadAllText(AppSettingsPath);
+                    var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    return JsonSerializer.Deserialize<Settings>(json, opts) ?? new Settings();
+                }
+
+                return new Settings();
             }
             catch
             {
@@ -98,6 +115,8 @@ namespace Dnp.ScriptRunner
     {
         void Open(string connectionString);
         string ExecuteNonQuery(string sql);
+        // Upsert helper for workflows JSON definitions
+        string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version);
     }
 
     class SqlServerExecutor : IDbExecutor
@@ -109,6 +128,51 @@ namespace Dnp.ScriptRunner
             using var cmd = _conn!.CreateCommand(); cmd.CommandText = sql; cmd.CommandTimeout = 1800;
             try { cmd.ExecuteNonQuery(); return "Success"; } catch (Exception ex) { return ex.Message; }
         }
+
+        public string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version)
+        {
+            try
+            {
+                using var tx = _conn!.BeginTransaction();
+                using var cmd = _conn.CreateCommand(); cmd.Transaction = tx; cmd.CommandTimeout = 1800;
+
+                cmd.CommandText = "SELECT COUNT(*) FROM Workflows WHERE Name = @Name";
+                cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar) { Value = name });
+                var exists = Convert.ToInt32(cmd.ExecuteScalar() ?? 0) > 0;
+                cmd.Parameters.Clear();
+
+                if (exists)
+                {
+                    cmd.CommandText = @"UPDATE Workflows SET JsonDefinition = @JsonDefinition, IsProduction = @IsProduction, IsActive = @IsActive, IsValid = @IsValid, UpdatedAt = @UpdatedAt, Version = @Version WHERE Name = @Name";
+                    cmd.Parameters.Add(new SqlParameter("@JsonDefinition", SqlDbType.NVarChar) { Value = jsonDefinition });
+                    cmd.Parameters.Add(new SqlParameter("@IsProduction", SqlDbType.Int) { Value = isProduction });
+                    cmd.Parameters.Add(new SqlParameter("@IsActive", SqlDbType.Int) { Value = isActive });
+                    cmd.Parameters.Add(new SqlParameter("@IsValid", SqlDbType.Int) { Value = isValid });
+                    cmd.Parameters.Add(new SqlParameter("@UpdatedAt", SqlDbType.DateTime2) { Value = updatedAt });
+                    cmd.Parameters.Add(new SqlParameter("@Version", SqlDbType.Int) { Value = version });
+                    cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar) { Value = name });
+                    cmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    cmd.CommandText = @"INSERT INTO Workflows (Name, JsonDefinition, IsProduction, IsActive, IsValid, CreatedAt, UpdatedAt, Version) VALUES (@Name, @JsonDefinition, @IsProduction, @IsActive, @IsValid, @CreatedAt, @UpdatedAt, @Version)";
+                    cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar) { Value = name });
+                    cmd.Parameters.Add(new SqlParameter("@JsonDefinition", SqlDbType.NVarChar) { Value = jsonDefinition });
+                    cmd.Parameters.Add(new SqlParameter("@IsProduction", SqlDbType.Int) { Value = isProduction });
+                    cmd.Parameters.Add(new SqlParameter("@IsActive", SqlDbType.Int) { Value = isActive });
+                    cmd.Parameters.Add(new SqlParameter("@IsValid", SqlDbType.Int) { Value = isValid });
+                    cmd.Parameters.Add(new SqlParameter("@CreatedAt", SqlDbType.DateTime2) { Value = createdAt });
+                    cmd.Parameters.Add(new SqlParameter("@UpdatedAt", SqlDbType.DateTime2) { Value = updatedAt });
+                    cmd.Parameters.Add(new SqlParameter("@Version", SqlDbType.Int) { Value = version });
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+                return "Success";
+            }
+            catch (Exception ex) { return ex.Message; }
+        }
+
         public void Dispose() { try { _conn?.Close(); _conn?.Dispose(); } catch { } }
     }
 
@@ -120,6 +184,49 @@ namespace Dnp.ScriptRunner
         {
             using var cmd = _conn!.CreateCommand(); cmd.CommandText = sql; cmd.CommandTimeout = 1800;
             try { cmd.ExecuteNonQuery(); return "Success"; } catch (Exception ex) { return ex.Message; }
+        }
+        public string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version)
+        {
+            try
+            {
+                using var tx = _conn!.BeginTransaction();
+                using var cmd = _conn.CreateCommand(); cmd.Transaction = tx; cmd.CommandTimeout = 1800;
+
+                cmd.CommandText = "SELECT COUNT(*) FROM Workflows WHERE Name = @Name";
+                cmd.Parameters.Add(new NpgsqlParameter("@Name", NpgsqlTypes.NpgsqlDbType.Text) { Value = name });
+                var exists = Convert.ToInt32(cmd.ExecuteScalar() ?? 0) > 0;
+                cmd.Parameters.Clear();
+
+                if (exists)
+                {
+                    cmd.CommandText = @"UPDATE Workflows SET JsonDefinition = @JsonDefinition, IsProduction = @IsProduction, IsActive = @IsActive, IsValid = @IsValid, UpdatedAt = @UpdatedAt, Version = @Version WHERE Name = @Name";
+                    cmd.Parameters.Add(new NpgsqlParameter("@JsonDefinition", NpgsqlTypes.NpgsqlDbType.Jsonb) { Value = jsonDefinition });
+                    cmd.Parameters.Add(new NpgsqlParameter("@IsProduction", NpgsqlTypes.NpgsqlDbType.Integer) { Value = isProduction });
+                    cmd.Parameters.Add(new NpgsqlParameter("@IsActive", NpgsqlTypes.NpgsqlDbType.Integer) { Value = isActive });
+                    cmd.Parameters.Add(new NpgsqlParameter("@IsValid", NpgsqlTypes.NpgsqlDbType.Integer) { Value = isValid });
+                    cmd.Parameters.Add(new NpgsqlParameter("@UpdatedAt", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = updatedAt });
+                    cmd.Parameters.Add(new NpgsqlParameter("@Version", NpgsqlTypes.NpgsqlDbType.Integer) { Value = version });
+                    cmd.Parameters.Add(new NpgsqlParameter("@Name", NpgsqlTypes.NpgsqlDbType.Text) { Value = name });
+                    cmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    cmd.CommandText = @"INSERT INTO Workflows (Name, JsonDefinition, IsProduction, IsActive, IsValid, CreatedAt, UpdatedAt, Version) VALUES (@Name, @JsonDefinition, @IsProduction, @IsActive, @IsValid, @CreatedAt, @UpdatedAt, @Version)";
+                    cmd.Parameters.Add(new NpgsqlParameter("@Name", NpgsqlTypes.NpgsqlDbType.Text) { Value = name });
+                    cmd.Parameters.Add(new NpgsqlParameter("@JsonDefinition", NpgsqlTypes.NpgsqlDbType.Jsonb) { Value = jsonDefinition });
+                    cmd.Parameters.Add(new NpgsqlParameter("@IsProduction", NpgsqlTypes.NpgsqlDbType.Integer) { Value = isProduction });
+                    cmd.Parameters.Add(new NpgsqlParameter("@IsActive", NpgsqlTypes.NpgsqlDbType.Integer) { Value = isActive });
+                    cmd.Parameters.Add(new NpgsqlParameter("@IsValid", NpgsqlTypes.NpgsqlDbType.Integer) { Value = isValid });
+                    cmd.Parameters.Add(new NpgsqlParameter("@CreatedAt", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = createdAt });
+                    cmd.Parameters.Add(new NpgsqlParameter("@UpdatedAt", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = updatedAt });
+                    cmd.Parameters.Add(new NpgsqlParameter("@Version", NpgsqlTypes.NpgsqlDbType.Integer) { Value = version });
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+                return "Success";
+            }
+            catch (Exception ex) { return ex.Message; }
         }
         public void Dispose() { try { _conn?.Close(); _conn?.Dispose(); } catch { } }
     }
@@ -152,6 +259,50 @@ namespace Dnp.ScriptRunner
             try { cmd.ExecuteNonQuery(); return "Success"; } catch (Exception ex) { return ex.Message; }
         }
 
+        public string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version)
+        {
+            try
+            {
+                using var tx = _conn!.BeginTransaction();
+                using var cmd = _conn.CreateCommand(); cmd.Transaction = tx; cmd.CommandTimeout = 1800;
+
+                cmd.CommandText = "SELECT COUNT(*) FROM Workflows WHERE Name = @Name";
+                cmd.Parameters.Add(new SqliteParameter("@Name", name));
+                var exists = Convert.ToInt32(cmd.ExecuteScalar() ?? 0) > 0;
+                cmd.Parameters.Clear();
+
+                if (exists)
+                {
+                    cmd.CommandText = @"UPDATE Workflows SET JsonDefinition = @JsonDefinition, IsProduction = @IsProduction, IsActive = @IsActive, IsValid = @IsValid, UpdatedAt = @UpdatedAt, Version = @Version WHERE Name = @Name";
+                    cmd.Parameters.Add(new SqliteParameter("@JsonDefinition", jsonDefinition));
+                    cmd.Parameters.Add(new SqliteParameter("@IsProduction", isProduction));
+                    cmd.Parameters.Add(new SqliteParameter("@IsActive", isActive));
+                    cmd.Parameters.Add(new SqliteParameter("@IsValid", isValid));
+                    cmd.Parameters.Add(new SqliteParameter("@UpdatedAt", updatedAt));
+                    cmd.Parameters.Add(new SqliteParameter("@Version", version));
+                    cmd.Parameters.Add(new SqliteParameter("@Name", name));
+                    cmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    cmd.CommandText = @"INSERT INTO Workflows (Name, JsonDefinition, IsProduction, IsActive, IsValid, CreatedAt, UpdatedAt, Version) VALUES (@Name, @JsonDefinition, @IsProduction, @IsActive, @IsValid, @CreatedAt, @UpdatedAt, @Version)";
+                    cmd.Parameters.Add(new SqliteParameter("@Name", name));
+                    cmd.Parameters.Add(new SqliteParameter("@JsonDefinition", jsonDefinition));
+                    cmd.Parameters.Add(new SqliteParameter("@IsProduction", isProduction));
+                    cmd.Parameters.Add(new SqliteParameter("@IsActive", isActive));
+                    cmd.Parameters.Add(new SqliteParameter("@IsValid", isValid));
+                    cmd.Parameters.Add(new SqliteParameter("@CreatedAt", createdAt));
+                    cmd.Parameters.Add(new SqliteParameter("@UpdatedAt", updatedAt));
+                    cmd.Parameters.Add(new SqliteParameter("@Version", version));
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+                return "Success";
+            }
+            catch (Exception ex) { return ex.Message; }
+        }
+
         public void Dispose() { try { _conn?.Close(); _conn?.Dispose(); } catch { } }
     }
 
@@ -163,6 +314,49 @@ namespace Dnp.ScriptRunner
         {
             using var cmd = _conn!.CreateCommand(); cmd.CommandText = sql; cmd.CommandTimeout = 1800;
             try { cmd.ExecuteNonQuery(); return "Success"; } catch (Exception ex) { return ex.Message; }
+        }
+        public string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version)
+        {
+            try
+            {
+                using var tx = _conn!.BeginTransaction();
+                using var cmd = _conn.CreateCommand(); cmd.Transaction = tx; cmd.CommandTimeout = 1800;
+
+                cmd.CommandText = "SELECT COUNT(*) FROM Workflows WHERE Name = @Name";
+                cmd.Parameters.Add(new MySqlParameter("@Name", name));
+                var exists = Convert.ToInt32(cmd.ExecuteScalar() ?? 0) > 0;
+                cmd.Parameters.Clear();
+
+                if (exists)
+                {
+                    cmd.CommandText = @"UPDATE Workflows SET JsonDefinition = @JsonDefinition, IsProduction = @IsProduction, IsActive = @IsActive, IsValid = @IsValid, UpdatedAt = @UpdatedAt, Version = @Version WHERE Name = @Name";
+                    cmd.Parameters.Add(new MySqlParameter("@JsonDefinition", jsonDefinition));
+                    cmd.Parameters.Add(new MySqlParameter("@IsProduction", isProduction));
+                    cmd.Parameters.Add(new MySqlParameter("@IsActive", isActive));
+                    cmd.Parameters.Add(new MySqlParameter("@IsValid", isValid));
+                    cmd.Parameters.Add(new MySqlParameter("@UpdatedAt", updatedAt));
+                    cmd.Parameters.Add(new MySqlParameter("@Version", version));
+                    cmd.Parameters.Add(new MySqlParameter("@Name", name));
+                    cmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    cmd.CommandText = @"INSERT INTO Workflows (Name, JsonDefinition, IsProduction, IsActive, IsValid, CreatedAt, UpdatedAt, Version) VALUES (@Name, @JsonDefinition, @IsProduction, @IsActive, @IsValid, @CreatedAt, @UpdatedAt, @Version)";
+                    cmd.Parameters.Add(new MySqlParameter("@Name", name));
+                    cmd.Parameters.Add(new MySqlParameter("@JsonDefinition", jsonDefinition));
+                    cmd.Parameters.Add(new MySqlParameter("@IsProduction", isProduction));
+                    cmd.Parameters.Add(new MySqlParameter("@IsActive", isActive));
+                    cmd.Parameters.Add(new MySqlParameter("@IsValid", isValid));
+                    cmd.Parameters.Add(new MySqlParameter("@CreatedAt", createdAt));
+                    cmd.Parameters.Add(new MySqlParameter("@UpdatedAt", updatedAt));
+                    cmd.Parameters.Add(new MySqlParameter("@Version", version));
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+                return "Success";
+            }
+            catch (Exception ex) { return ex.Message; }
         }
         public void Dispose() { try { _conn?.Close(); _conn?.Dispose(); } catch { } }
     }
@@ -176,6 +370,49 @@ namespace Dnp.ScriptRunner
             using var cmd = _conn!.CreateCommand(); cmd.CommandText = sql; cmd.CommandTimeout = 1800;
             try { cmd.ExecuteNonQuery(); return "Success"; } catch (Exception ex) { return ex.Message; }
         }
+        public string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version)
+        {
+            try
+            {
+                using var tx = _conn!.BeginTransaction();
+                using var cmd = _conn.CreateCommand(); cmd.Transaction = tx; cmd.CommandTimeout = 1800;
+
+                cmd.CommandText = "SELECT COUNT(*) FROM Workflows WHERE Name = :Name";
+                cmd.Parameters.Add(new OracleParameter(":Name", name));
+                var exists = Convert.ToInt32(cmd.ExecuteScalar() ?? 0) > 0;
+                cmd.Parameters.Clear();
+
+                if (exists)
+                {
+                    cmd.CommandText = @"UPDATE Workflows SET JsonDefinition = :JsonDefinition, IsProduction = :IsProduction, IsActive = :IsActive, IsValid = :IsValid, UpdatedAt = :UpdatedAt, Version = :Version WHERE Name = :Name";
+                    cmd.Parameters.Add(new OracleParameter(":JsonDefinition", jsonDefinition));
+                    cmd.Parameters.Add(new OracleParameter(":IsProduction", isProduction));
+                    cmd.Parameters.Add(new OracleParameter(":IsActive", isActive));
+                    cmd.Parameters.Add(new OracleParameter(":IsValid", isValid));
+                    cmd.Parameters.Add(new OracleParameter(":UpdatedAt", updatedAt));
+                    cmd.Parameters.Add(new OracleParameter(":Version", version));
+                    cmd.Parameters.Add(new OracleParameter(":Name", name));
+                    cmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    cmd.CommandText = @"INSERT INTO Workflows (Name, JsonDefinition, IsProduction, IsActive, IsValid, CreatedAt, UpdatedAt, Version) VALUES (:Name, :JsonDefinition, :IsProduction, :IsActive, :IsValid, :CreatedAt, :UpdatedAt, :Version)";
+                    cmd.Parameters.Add(new OracleParameter(":Name", name));
+                    cmd.Parameters.Add(new OracleParameter(":JsonDefinition", jsonDefinition));
+                    cmd.Parameters.Add(new OracleParameter(":IsProduction", isProduction));
+                    cmd.Parameters.Add(new OracleParameter(":IsActive", isActive));
+                    cmd.Parameters.Add(new OracleParameter(":IsValid", isValid));
+                    cmd.Parameters.Add(new OracleParameter(":CreatedAt", createdAt));
+                    cmd.Parameters.Add(new OracleParameter(":UpdatedAt", updatedAt));
+                    cmd.Parameters.Add(new OracleParameter(":Version", version));
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+                return "Success";
+            }
+            catch (Exception ex) { return ex.Message; }
+        }
         public void Dispose() { try { _conn?.Close(); _conn?.Dispose(); } catch { } }
     }
 
@@ -187,6 +424,49 @@ namespace Dnp.ScriptRunner
         {
             using var cmd = _conn!.CreateCommand(); cmd.CommandText = sql; cmd.CommandTimeout = 1800;
             try { cmd.ExecuteNonQuery(); return "Success"; } catch (Exception ex) { return ex.Message; }
+        }
+        public string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version)
+        {
+            try
+            {
+                using var tx = _conn!.BeginTransaction();
+                using var cmd = _conn.CreateCommand(); cmd.Transaction = tx; cmd.CommandTimeout = 1800;
+
+                cmd.CommandText = "SELECT COUNT(*) FROM Workflows WHERE Name = @Name";
+                var p = cmd.CreateParameter(); p.ParameterName = "@Name"; p.Value = name; cmd.Parameters.Add(p);
+                var exists = Convert.ToInt32(cmd.ExecuteScalar() ?? 0) > 0;
+                cmd.Parameters.Clear();
+
+                if (exists)
+                {
+                    cmd.CommandText = @"UPDATE Workflows SET JsonDefinition = @JsonDefinition, IsProduction = @IsProduction, IsActive = @IsActive, IsValid = @IsValid, UpdatedAt = @UpdatedAt, Version = @Version WHERE Name = @Name";
+                    var pj = cmd.CreateParameter(); pj.ParameterName = "@JsonDefinition"; pj.Value = jsonDefinition; cmd.Parameters.Add(pj);
+                    var pp = cmd.CreateParameter(); pp.ParameterName = "@IsProduction"; pp.Value = isProduction; cmd.Parameters.Add(pp);
+                    var pa = cmd.CreateParameter(); pa.ParameterName = "@IsActive"; pa.Value = isActive; cmd.Parameters.Add(pa);
+                    var pv = cmd.CreateParameter(); pv.ParameterName = "@IsValid"; pv.Value = isValid; cmd.Parameters.Add(pv);
+                    var pu = cmd.CreateParameter(); pu.ParameterName = "@UpdatedAt"; pu.Value = updatedAt; cmd.Parameters.Add(pu);
+                    var pv2 = cmd.CreateParameter(); pv2.ParameterName = "@Version"; pv2.Value = version; cmd.Parameters.Add(pv2);
+                    var pn = cmd.CreateParameter(); pn.ParameterName = "@Name"; pn.Value = name; cmd.Parameters.Add(pn);
+                    cmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    cmd.CommandText = @"INSERT INTO Workflows (Name, JsonDefinition, IsProduction, IsActive, IsValid, CreatedAt, UpdatedAt, Version) VALUES (@Name, @JsonDefinition, @IsProduction, @IsActive, @IsValid, @CreatedAt, @UpdatedAt, @Version)";
+                    var pn = cmd.CreateParameter(); pn.ParameterName = "@Name"; pn.Value = name; cmd.Parameters.Add(pn);
+                    var pj = cmd.CreateParameter(); pj.ParameterName = "@JsonDefinition"; pj.Value = jsonDefinition; cmd.Parameters.Add(pj);
+                    var pp = cmd.CreateParameter(); pp.ParameterName = "@IsProduction"; pp.Value = isProduction; cmd.Parameters.Add(pp);
+                    var pa = cmd.CreateParameter(); pa.ParameterName = "@IsActive"; pa.Value = isActive; cmd.Parameters.Add(pa);
+                    var pv = cmd.CreateParameter(); pv.ParameterName = "@IsValid"; pv.Value = isValid; cmd.Parameters.Add(pv);
+                    var pc = cmd.CreateParameter(); pc.ParameterName = "@CreatedAt"; pc.Value = createdAt; cmd.Parameters.Add(pc);
+                    var pu = cmd.CreateParameter(); pu.ParameterName = "@UpdatedAt"; pu.Value = updatedAt; cmd.Parameters.Add(pu);
+                    var pv2 = cmd.CreateParameter(); pv2.ParameterName = "@Version"; pv2.Value = version; cmd.Parameters.Add(pv2);
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+                return "Success";
+            }
+            catch (Exception ex) { return ex.Message; }
         }
         public void Dispose() { try { _conn?.Close(); _conn?.Dispose(); } catch { } }
     }
@@ -300,23 +580,101 @@ namespace Dnp.ScriptRunner
 
                 var content = await File.ReadAllTextAsync(filePath, ct);
                 var statements = SplitStatements(content).ToList();
+                var baseDir = Path.GetDirectoryName(filePath) ?? string.Empty;
                 for (var i = 0; i < statements.Count; i++)
                 {
                     if (ct.IsCancellationRequested) throw new OperationCanceledException(ct);
                     var sql = statements[i];
-                    var res = executor.ExecuteNonQuery(sql);
-                    var resultMsg = res == "Success"
+
+                    // load markers from settings (configurable)
+                    var settings = Settings.Load();
+                    var markers = settings.EmbeddedFileMarkers ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                    // Replace any embedded file tags in the statement (applies to countries inserts as well)
+                    try
+                    {
+                        sql = ScriptHelpers.ReplaceEmbeddedTags(sql, baseDir, markers, settings.EnableEmbeddedTypeDetection);
+                    }
+                    catch (Exception ex)
+                    {
+                        var err = $"Failed to replace embedded tags: {ex.Message}";
+                        AnsiConsole.MarkupLine($"[red]{err}[/]");
+                        await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {err}");
+                        continue;
+                    }
+
+                    // Special handling: INSERT INTO Workflows with embedded file markers
+                    if (sql.IndexOf("INSERT INTO Workflows", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        if (ScriptHelpers.TryExtractEmbeddedFileTag(sql, markers, out var openTag, out var closeTag, out var relativePath, out var fileType))
+                        {
+                            // After replacement, the JSON content is already inlined and normalized, so parse and upsert as before
+                            var parsed = ScriptHelpers.ParseWorkflowInsert(sql);
+                            if (parsed == null)
+                            {
+                                var err = $"Unable to parse INSERT statement for workflow values in file {Path.GetFileName(filePath)}";
+                                AnsiConsole.MarkupLine($"[red]{err}[/]");
+                                await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {err}");
+                                continue;
+                            }
+
+                            // Extract the JsonDefinition literal from the sql by finding the first single-quoted JSON value after Name
+                            // Best-effort: find the first '{' after the Name occurrence
+                            var jsonStart = sql.IndexOf('{');
+                            var jsonEnd = sql.LastIndexOf('}');
+                            string jsonContent = string.Empty;
+                            if (jsonStart >= 0 && jsonEnd > jsonStart)
+                            {
+                                jsonContent = sql.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                            }
+
+                            if (string.IsNullOrWhiteSpace(jsonContent))
+                            {
+                                var err = $"Unable to extract JSON content for workflow '{parsed.Name}' in file {Path.GetFileName(filePath)}";
+                                AnsiConsole.MarkupLine($"[red]{err}[/]");
+                                await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {err}");
+                                continue;
+                            }
+
+                            // validate and normalize json
+                            try
+                            {
+                                using var doc = JsonDocument.Parse(jsonContent);
+                                jsonContent = JsonSerializer.Serialize(doc.RootElement);
+                            }
+                            catch (Exception ex)
+                            {
+                                var err = $"Failed to parse JSON content for workflow '{parsed.Name}': {ex.Message}";
+                                AnsiConsole.MarkupLine($"[red]{err}[/]");
+                                await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {err}");
+                                continue;
+                            }
+
+                            var createdAt = parsed.CreatedAt ?? DateTime.UtcNow;
+                            var updatedAt = parsed.UpdatedAt ?? DateTime.UtcNow;
+
+                            var res = executor.ExecuteUpsertWorkflow(parsed.Name, jsonContent, parsed.IsProduction, parsed.IsActive, parsed.IsValid, createdAt, updatedAt, parsed.Version);
+                            var resultMsg = res == "Success" ? $"OK Upsert workflow '{parsed.Name}'" : $"ERROR Upsert workflow '{parsed.Name}': {res}";
+                            if (res == "Success") AnsiConsole.MarkupLine($" [green]{resultMsg}[/]"); else AnsiConsole.MarkupLine($" [red]{resultMsg}[/]");
+                            await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {resultMsg}");
+
+                            continue;
+                        }
+                    }
+
+                    var res2 = executor.ExecuteNonQuery(sql);
+                    var resultMsg2 = res2 == "Success"
                         ? $"OK Statement {i + 1}/{statements.Count}"
-                        : $"ERROR Statement {i + 1}/{statements.Count}: {res}";
+                        : $"ERROR Statement {i + 1}/{statements.Count}: {res2}";
 
-                    if (res == "Success")
-                        AnsiConsole.MarkupLine($" [green]{resultMsg}[/]");
+                    if (res2 == "Success")
+                        AnsiConsole.MarkupLine($" [green]{resultMsg2}[/]");
                     else
-                        AnsiConsole.MarkupLine($" [red]{resultMsg}[/]");
+                        AnsiConsole.MarkupLine($" [red]{resultMsg2}[/]");
 
-                    await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {resultMsg}");
+                    await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {resultMsg2}");
 
-                    if (res != "Success")
+                    if (res2 != "Success")
                     {
                         var action = AnsiConsole.Prompt(new SelectionPrompt<string>().AddChoices(new[] { "Continue", "Skip File", "Stop" }));
                         if (action == "Stop") ct.ThrowIfCancellationRequested();
@@ -380,6 +738,7 @@ namespace Dnp.ScriptRunner
         }
     }
 
+    // Application entrypoint
     class Program
     {
         static async Task<int> Main(string[] args)

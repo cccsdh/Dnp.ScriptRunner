@@ -5,8 +5,8 @@
 -- db2 connect to WORLD
 -- db2 "CREATE SCHEMA WORLD"
 -- After connecting to the WORLD database you can set the current schema in the SQL script itself
--- so subsequent unqualified object names are created in that schema.
--- NOTE:  The connection string user myust have the necessary privileges to create a database and schema.
+-- so subsequent unqualified object names are created in that schema without qualifying the name.
+-- NOTE:  The connection string user must have the necessary privileges to create a database and schema.
 
 -- Connect to the WORLD database first (run in CLI):
 -- db2 connect to WORLD
@@ -19,6 +19,7 @@ CREATE TABLE COUNTRIES (
     ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) PRIMARY KEY,
     NAME VARCHAR(200) NOT NULL,
     CAPITAL VARCHAR(200) NOT NULL,
+    LANGUAGES CLOB NULL,
     POPULATION BIGINT NOT NULL
 );
 

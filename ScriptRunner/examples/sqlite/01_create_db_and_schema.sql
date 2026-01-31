@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS Countries (
     Id INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
     Capital TEXT NOT NULL,
+    Languages TEXT NULL,
     Population INTEGER NOT NULL
 );

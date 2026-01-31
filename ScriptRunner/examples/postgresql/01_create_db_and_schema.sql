@@ -14,5 +14,6 @@ CREATE TABLE IF NOT EXISTS world.Countries (
     Id SERIAL PRIMARY KEY,
     Name TEXT NOT NULL,
     Capital TEXT NOT NULL,
+    Languages JSONB NULL,
     Population BIGINT NOT NULL
 );
