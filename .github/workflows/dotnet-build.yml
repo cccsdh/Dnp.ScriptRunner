@@ -26,9 +26,17 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
-
+            
+      - name: Print installed SDKs
+        run: dotnet --list-sdks
+        
       - name: Restore
         run: dotnet restore
+        
+      - name: Clear MSBuild SDK resolver cache
+        run: |
+          rmdir /s /q "%LOCALAPPDATA%\Microsoft\MSBuild\SdkResolverCache" 2>nul || exit 0
+        shell: cmd
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
