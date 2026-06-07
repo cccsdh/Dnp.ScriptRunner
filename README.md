@@ -2,19 +2,19 @@
 
 [![.NET Build and Publish](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml)
 
-ScriptRunner is a .NET 8 - .NET 10.0 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
+ScriptRunner is a .NET 8 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
 
 
 ## Key features
 
-- Cross-platform .NET 8 - .NET 10.0 application
+- Cross-platform .NET 8 application
 - Run one-off or batched scripts
 - Capture and persist stdout/stderr and exit codes
 - Designed to integrate with CI/CD pipelines
 
 ## Requirements
 
-- .NET 8 SDK (https://dotnet.microsoft.com) or .NET 10.0 SDK (https://dotnet.microsoft.com)
+- .NET 8 SDK (https://dotnet.microsoft.com) 
 - Windows, macOS, or Linux
 
 ## Build
