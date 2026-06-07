@@ -477,8 +477,8 @@ namespace Dnp.ScriptRunner
         public static void RenderHeader()
         {
             var year = DateTime.Now.Year;
-            var rule = new Spectre.Console.Rule($"[bold yellow]Dnp.ScriptRunner ©{year} Doughnuts Publishing[/]") { Alignment = Spectre.Console.Justify.Center };
-            AnsiConsole.Render(rule);
+            var rule = new Spectre.Console.Rule($"[bold yellow]Dnp.ScriptRunner ©{year} Doughnuts Publishing[/]") { Justification = Spectre.Console.Justify.Center };
+            AnsiConsole.Write(rule);
             // add a separator line so subsequent output appears below the header
             AnsiConsole.WriteLine();
         }
