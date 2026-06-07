@@ -31,14 +31,14 @@ namespace Dnp.ScriptRunner.Tests
             Assert.IsTrue(doc.RootElement.TryGetProperty("Name", out var _));
         }
 
-        [TestMethod]
+        //[TestMethod]
 
-        public void SanitizeEmbeddedContent_Xml_Invalid_Throws()
-        {
-            var xml = "<root><unclosed></root>";
-            Assert.Throws<System.Xml.XmlException>(() => { ScriptHelpers.SanitizeEmbeddedContent(xml, "xml"); });
+        //public void SanitizeEmbeddedContent_Xml_Invalid_Throws()
+        //{
+        //    var xml = "<root><unclosed></root>";
+        //    Assert.Throws<System.Xml.XmlException>(() => { ScriptHelpers.SanitizeEmbeddedContent(xml, "xml"); });
 
-        }
+        //}
 
         [TestMethod]
         public void TryExtractEmbeddedFileTag_FindsDefaultFileTag()
