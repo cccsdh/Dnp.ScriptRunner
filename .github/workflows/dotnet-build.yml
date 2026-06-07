@@ -20,23 +20,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET (8 + 10)
+      - name: Setup .NET (8)
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             8.0.x
-            10.0.x
             
-      - name: Print installed SDKs
-        run: dotnet --list-sdks
-        
-      - name: Restore (force .NET 8 SDK)
-        run: dotnet restore -p:TargetFramework=net8.0
-        
-      - name: Clear MSBuild SDK resolver cache
-        run: |
-          rmdir /s /q "%LOCALAPPDATA%\Microsoft\MSBuild\SdkResolverCache" 2>nul || exit 0
-        shell: cmd
+      - name: Restore 
+        run: dotnet restore 
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
@@ -49,12 +40,6 @@ jobs:
       # -----------------------------
       - name: Publish (.NET 8)
         run: dotnet publish --configuration Release -f net8.0 -r win-x64 --self-contained false -o ./artifacts/publish-net8
-
-      # -----------------------------
-      # Publish .NET 10
-      # -----------------------------
-      - name: Publish (.NET 10)
-        run: dotnet publish --configuration Release -f net10.0 -r win-x64 --self-contained false -o ./artifacts/publish-net10
 
       # -----------------------------
       # Versioning
@@ -98,10 +83,8 @@ jobs:
           $version = $env:VERSION
 
           $zip8 = "ScriptRunner-net8-$version.zip"
-          $zip10 = "ScriptRunner-net10-$version.zip"
 
           Compress-Archive -Path ./artifacts/publish-net8/* -DestinationPath ./artifacts/$zip8
-          Compress-Archive -Path ./artifacts/publish-net10/* -DestinationPath ./artifacts/$zip10
 
       # -----------------------------
       # Create GitHub Release
@@ -128,16 +111,6 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/ScriptRunner-net8-${{ env.VERSION }}.zip
           asset_name: ScriptRunner-net8-${{ env.VERSION }}.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload .NET 10 artifact
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/ScriptRunner-net10-${{ env.VERSION }}.zip
-          asset_name: ScriptRunner-net10-${{ env.VERSION }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
