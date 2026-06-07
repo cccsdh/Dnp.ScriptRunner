@@ -40,7 +40,37 @@ Or execute the produced binary from the `bin` folder after a build:
 dotnet ./bin/Release/net8.0/ScriptRunner.exe
 ```
 
-## Examples
+## Command-line (non-interactive) mode
+
+ScriptRunner can be started non-interactively by providing three arguments: the database type, the connection string, and the scripts directory. When invoked with these parameters the application will bypass the interactive UI prompts and immediately start processing scripts in the provided directory.
+
+Usage:
+
+```bash
+dotnet run --project ./src/ScriptRunner/ScriptRunner.csproj -- <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
+```
+
+Or after building the binary:
+
+```bash
+dotnet ./bin/Release/net8.0/ScriptRunner.exe <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
+```
+
+Arguments:
+- DatabaseType: One of PostgreSQL, SqlServer, Sqlite, MySQL, Oracle, DB2
+- ConnectionString: The full connection string for the selected provider (wrap in quotes if it contains spaces)
+- ScriptsDirectory: Full path to the folder containing .sql and .txt scripts to execute
+
+Example:
+
+```bash
+dotnet run --project ./src/ScriptRunner/ScriptRunner.csproj -- PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts"
+```
+
+When run in CLI mode, the application will automatically persist the supplied connection string and scripts directory into Settings if they are not already present.
+
+
+## UI Prompt Examples
 
 Main Screen:
 ![Example usage screenshot](ScriptRunner/images/MainScreen.png)
