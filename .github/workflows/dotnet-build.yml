@@ -25,9 +25,9 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            
-      - name: Restore 
-        run: dotnet restore 
+
+      - name: Restore
+        run: dotnet restore
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
@@ -35,16 +35,17 @@ jobs:
       - name: Test
         run: dotnet test --no-build --verbosity normal
 
-      # -----------------------------
-      # Publish .NET 8
-      # -----------------------------
       - name: Publish (.NET 8)
         run: dotnet publish --configuration Release -f net8.0 -r win-x64 --self-contained false -o ./artifacts/publish-net8
 
-      # -----------------------------
-      # Versioning
-      # -----------------------------
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-exe
+          path: ./artifacts/publish-net8
+
       - name: Determine next version
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: determine-version
         uses: actions/github-script@v6
         with:
@@ -72,24 +73,18 @@ jobs:
             fs.appendFileSync(process.env.GITHUB_ENV, `VERSION=${nextVersion}\n`);
             return nextVersion;
 
-      # -----------------------------
-      # Zip both artifacts
-      # -----------------------------
       - name: Zip publish outputs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: zip
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           $version = $env:VERSION
-
           $zip8 = "ScriptRunner-net8-$version.zip"
-
           Compress-Archive -Path ./artifacts/publish-net8/* -DestinationPath ./artifacts/$zip8
 
-      # -----------------------------
-      # Create GitHub Release
-      # -----------------------------
       - name: Create GitHub release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: create_release
         uses: actions/create-release@v1
         with:
@@ -102,10 +97,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # -----------------------------
-      # Upload both artifacts
-      # -----------------------------
       - name: Upload .NET 8 artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -115,10 +108,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # -----------------------------
-      # Prune old releases
-      # -----------------------------
       - name: Prune old releases (keep last 5)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/github-script@v6
         with:
           script: |
@@ -141,12 +132,3 @@ jobs:
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # -----------------------------
-      # Upload artifacts to Actions
-      # -----------------------------
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: published-exe
-          path: ./artifacts/publish
