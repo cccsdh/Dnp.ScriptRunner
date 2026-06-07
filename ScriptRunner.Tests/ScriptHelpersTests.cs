@@ -32,22 +32,23 @@ namespace Dnp.ScriptRunner.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(System.Xml.XmlException))]
+
         public void SanitizeEmbeddedContent_Xml_Invalid_Throws()
         {
             var xml = "<root><unclosed></root>";
-            ScriptHelpers.SanitizeEmbeddedContent(xml, "xml");
+            Assert.Throws<System.Xml.XmlException>(() => { ScriptHelpers.SanitizeEmbeddedContent(xml, "xml"); });
+
         }
 
         [TestMethod]
         public void TryExtractEmbeddedFileTag_FindsDefaultFileTag()
         {
-            var sql = "... <file>path/to/file.json</file> ...";
+            var sql = "... <DnPTxt>path/to/file.json</DnPTxt> ...";
             var markers = ScriptHelpers.DefaultMarkers;
             var ok = ScriptHelpers.TryExtractEmbeddedFileTag(sql, markers, out var open, out var close, out var rel, out var type);
             Assert.IsTrue(ok);
-            Assert.AreEqual("<file>", open);
-            Assert.AreEqual("</file>", close);
+            Assert.AreEqual("<DnPTxt>", open);
+            Assert.AreEqual("</DnPTxt>", close);
             Assert.AreEqual("txt", type);
             Assert.AreEqual("path/to/file.json", rel);
         }
