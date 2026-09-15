@@ -18,5 +18,9 @@ namespace Dnp.ScriptRunner
         string ExecuteNonQuery(string sql);
         // Upsert helper for workflows JSON definitions
         string ExecuteUpsertWorkflow(string name, string jsonDefinition, int isProduction, int isActive, int isValid, DateTime createdAt, DateTime updatedAt, int version);
+        // Generates a schema create script (DDL) for all user tables reachable via the current connection
+        string GenerateSchemaScript();
+        // Generates INSERT statements for the current data in all user tables reachable via the current connection
+        string GenerateDataScript();
     }
 }

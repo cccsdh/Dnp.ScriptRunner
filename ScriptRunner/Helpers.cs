@@ -8,22 +8,118 @@
 
 using Spectre.Console;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 
 namespace Dnp.ScriptRunner
 {
+    // Distinguishes the handful of literal-formatting rules (booleans, binary, dates) that vary by provider
+    enum SqlLiteralProvider
+    {
+        Generic,
+        Postgres,
+        Oracle,
+        Db2
+    }
+
     static class Helpers
     {
+        // Formats a CLR value read from a data reader as a SQL literal suitable for an INSERT statement
+        public static string FormatSqlLiteral(object? value, SqlLiteralProvider provider = SqlLiteralProvider.Generic)
+        {
+            if (value == null || value is DBNull) return "NULL";
+
+            switch (value)
+            {
+                case bool b:
+                    return provider == SqlLiteralProvider.Postgres ? (b ? "TRUE" : "FALSE") : (b ? "1" : "0");
+                case byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal:
+                    return Convert.ToString(value, CultureInfo.InvariantCulture) ?? "NULL";
+                case DateTime dt:
+                    var formatted = dt.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
+                    return provider == SqlLiteralProvider.Oracle
+                        ? $"TO_TIMESTAMP('{formatted}', 'YYYY-MM-DD HH24:MI:SS.FF3')"
+                        : $"'{formatted}'";
+                case DateTimeOffset dto:
+                    return FormatSqlLiteral(dto.DateTime, provider);
+                case byte[] bytes:
+                    var hex = Convert.ToHexString(bytes);
+                    return provider switch
+                    {
+                        SqlLiteralProvider.Postgres => $"decode('{hex}', 'hex')",
+                        SqlLiteralProvider.Oracle => $"HEXTORAW('{hex}')",
+                        SqlLiteralProvider.Db2 => $"x'{hex}'",
+                        _ => "0x" + hex
+                    };
+                case Guid g:
+                    return $"'{g}'";
+                default:
+                    var s = value.ToString() ?? string.Empty;
+                    return "'" + s.Replace("'", "''") + "'";
+            }
+        }
+
         // Update header: copyright symbol then year with no space and ensure it's printed once at top
         public static void RenderHeader()
         {
             var year = DateTime.Now.Year;
-            var rule = new Rule($"[bold yellow]Dnp.ScriptRunner ©{year} Doughnuts Publishing[/]") { Justification = Justify.Center };
+            var rule = new Rule($"[bold yellow]Dnp.ScriptRunner ï¿½{year} Doughnuts Publishing[/]") { Justification = Justify.Center };
             AnsiConsole.Write(rule);
             // add a separator line so subsequent output appears below the header
             AnsiConsole.WriteLine();
+        }
+
+        // Prompts for a directory, offering previously saved directories for the given provider or letting the user enter a new one.
+        // When createIfMissing is true, the directory need not already exist and is created on disk before returning.
+        public static string PromptForDirectory(Settings settings, string dbType, string selectionTitle, string textPromptLabel, bool createIfMissing = false)
+        {
+            const string newDirectoryLabel = "<New directory...>";
+            var savedDirs = settings.GetDirectories(dbType);
+            string dir;
+
+            if (savedDirs.Count > 0)
+            {
+                var dirChoices = new List<string>(savedDirs) { newDirectoryLabel };
+                var pickDir = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>().Title(selectionTitle).AddChoices(dirChoices));
+
+                if (pickDir == newDirectoryLabel)
+                {
+                    dir = PromptForNewDirectory(textPromptLabel, createIfMissing);
+                    settings.AddDirectory(dbType, dir);
+                    settings.Save();
+                }
+                else
+                {
+                    dir = pickDir;
+                }
+            }
+            else
+            {
+                dir = PromptForNewDirectory(textPromptLabel, createIfMissing);
+                settings.AddDirectory(dbType, dir);
+                settings.Save();
+            }
+
+            if (createIfMissing && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            return dir;
+        }
+
+        private static string PromptForNewDirectory(string textPromptLabel, bool createIfMissing = false)
+        {
+            var prompt = new TextPrompt<string>(textPromptLabel)
+                .DefaultValue(Environment.CurrentDirectory);
+
+            if (!createIfMissing)
+            {
+                prompt.Validate(s => Directory.Exists(s) ? ValidationResult.Success() : ValidationResult.Error("[red]Directory not found[/]"));
+            }
+
+            return AnsiConsole.Prompt(prompt);
         }
 
         public static IEnumerable<string> SplitStatements(string sql)

@@ -118,39 +118,14 @@ namespace Dnp.ScriptRunner
                     settings.Save();
                 }
 
+                // Offer to generate a schema create script for this connection instead of running scripts
+                if (AnsiConsole.Confirm("Generate a schema create script for this connection?", false))
+                {
+                    return await GenerateSchemaScriptAsync(dbType, connectionString, settings);
+                }
+
                 // Script directory: offer saved directories per provider
-                var savedDirs = settings.GetDirectories(dbType);
-                if (savedDirs.Count > 0)
-                {
-                    var dirChoices = new List<string>(savedDirs);
-                    dirChoices.Add("<New directory...>");
-                    var pickDir = AnsiConsole.Prompt(
-                        new SelectionPrompt<string>().Title("Select a saved scripts directory or create new").AddChoices(dirChoices));
-                    if (pickDir == "<New directory...>")
-                    {
-                        scriptDir = AnsiConsole.Prompt(
-                            new TextPrompt<string>("Scripts directory (full path)")
-                                .DefaultValue(Environment.CurrentDirectory)
-                                .Validate(s => System.IO.Directory.Exists(s) ? ValidationResult.Success() : ValidationResult.Error("[red]Directory not found[/]")));
-                        // Auto-save new directory
-                        settings.AddDirectory(dbType, scriptDir);
-                        settings.Save();
-                    }
-                    else
-                    {
-                        scriptDir = pickDir;
-                    }
-                }
-                else
-                {
-                    scriptDir = AnsiConsole.Prompt(
-                        new TextPrompt<string>("Scripts directory (full path)")
-                            .DefaultValue(Environment.CurrentDirectory)
-                            .Validate(s => System.IO.Directory.Exists(s) ? ValidationResult.Success() : ValidationResult.Error("[red]Directory not found[/]")));
-                    // Auto-save when no saved directories exist
-                    settings.AddDirectory(dbType, scriptDir);
-                    settings.Save();
-                }
+                scriptDir = Helpers.PromptForDirectory(settings, dbType, "Select a saved scripts directory or create new", "Scripts directory (full path)");
             }
 
             var files = System.IO.Directory.EnumerateFiles(scriptDir, "*.*", System.IO.SearchOption.TopDirectoryOnly)
@@ -311,6 +286,58 @@ namespace Dnp.ScriptRunner
             }
 
             return 0;
+        }
+
+        private static Task<int> GenerateSchemaScriptAsync(string dbType, string connectionString, Settings settings)
+        {
+            var includeData = AnsiConsole.Confirm("Include data (INSERT statements for each table) in the script as well?", false);
+
+            var outputDir = Helpers.PromptForDirectory(settings, dbType, "Select a saved directory to save the schema script or create new", "Output directory for schema script (full path)", createIfMissing: true);
+
+            IDbExecutor executor = dbType switch
+            {
+                "PostgreSQL" => new PostgresExecutor(),
+                "SqlServer" => new SqlServerExecutor(),
+                "Sqlite" => new SqliteExecutor(),
+                "MySQL" => new MySqlExecutor(),
+                "Oracle" => new OracleExecutor(),
+                "DB2" => new Db2Executor(),
+                _ => throw new InvalidOperationException("Unsupported database")
+            };
+
+            try
+            {
+                AnsiConsole.Status().Start("Opening connection...", ctx => executor.Open(connectionString));
+                AnsiConsole.MarkupLine("[green]Connection opened.[/]");
+
+                var schemaScript = string.Empty;
+                AnsiConsole.Status().Start("Generating schema create script...", ctx => schemaScript = executor.GenerateSchemaScript());
+
+                var fullScript = new StringBuilder(schemaScript);
+
+                if (includeData)
+                {
+                    var dataScript = string.Empty;
+                    AnsiConsole.Status().Start("Generating data insert script...", ctx => dataScript = executor.GenerateDataScript());
+                    fullScript.AppendLine();
+                    fullScript.Append(dataScript);
+                }
+
+                var outputFile = Path.Combine(outputDir, $"schema-create-{dbType}-{DateTime.Now:yyyyMMdd_HHmmss}.sql");
+                File.WriteAllText(outputFile, fullScript.ToString(), Encoding.UTF8);
+
+                AnsiConsole.MarkupLine($"[green]Schema create script written to[/] {outputFile}");
+                return Task.FromResult(0);
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to generate schema create script:[/] {ex.Message}");
+                return Task.FromResult(4);
+            }
+            finally
+            {
+                executor.Dispose();
+            }
         }
     }
 }
