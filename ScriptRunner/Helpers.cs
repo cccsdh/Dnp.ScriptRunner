@@ -61,11 +61,17 @@ namespace Dnp.ScriptRunner
             }
         }
 
-        // Update header: copyright symbol then year with no space and ensure it's printed once at top
+        // Renders the ScriptRunner banner and copyright footer at the top of each menu screen
         public static void RenderHeader()
         {
+            // The figlet banner needs ~86 columns to avoid wrapping; fall back to plain text on narrow terminals
+            if (AnsiConsole.Profile.Width >= 90)
+                AnsiConsole.Write(new FigletText("ScriptRunner").Centered().Color(Color.Yellow));
+            else
+                AnsiConsole.Write(new Rule("[bold yellow]ScriptRunner[/]") { Justification = Justify.Center });
+
             var year = DateTime.Now.Year;
-            var rule = new Rule($"[bold yellow]Dnp.ScriptRunner �{year} Doughnuts Publishing[/]") { Justification = Justify.Center };
+            var rule = new Rule($"[dim]© {year} Doughnuts Publishing[/]") { Justification = Justify.Center };
             AnsiConsole.Write(rule);
             // add a separator line so subsequent output appears below the header
             AnsiConsole.WriteLine();
