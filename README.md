@@ -23,6 +23,7 @@ For a walkthrough of every interactive prompt, including the schema create scrip
 
 ## Build
 
+
 Restore packages and build the solution:
 
 ```bash
@@ -130,6 +131,13 @@ Script Selection Screen:
 
 End of Run Screen:
 ![Example usage screenshot](ScriptRunner/images/EndOfRun.png)
+
+Generate Create Script Screen:
+![Example usage screenshot](ScriptRunner/images/GenerateCreateScript.png)
+
+Include Data Screen:
+![Example usage screenshot](ScriptRunner/images/IncludeData.png)
+
 
 
 ## Contributing
