@@ -20,11 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET (8)
+      - name: Setup .NET (10)
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            8.0.x
+            10.0.x
 
       - name: Restore
         run: dotnet restore
@@ -35,14 +35,14 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration Release --verbosity normal
 
-      - name: Publish (.NET 8)
-        run: dotnet publish --configuration Release -f net8.0 -r win-x64 --self-contained false -o ./artifacts/publish-net8
+      - name: Publish (.NET 10)
+        run: dotnet publish --configuration Release -f net10.0 -r win-x64 --self-contained false -o ./artifacts/publish-net10
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: published-exe
-          path: ./artifacts/publish-net8
+          path: ./artifacts/publish-net10
 
       - name: Determine next version
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -80,8 +80,8 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           $version = $env:VERSION
-          $zip8 = "ScriptRunner-net8-$version.zip"
-          Compress-Archive -Path ./artifacts/publish-net8/* -DestinationPath ./artifacts/$zip8
+          $zip10 = "ScriptRunner-net10-$version.zip"
+          Compress-Archive -Path ./artifacts/publish-net10/* -DestinationPath ./artifacts/$zip10
 
       - name: Create GitHub release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -97,13 +97,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload .NET 8 artifact
+      - name: Upload .NET 10 artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/ScriptRunner-net8-${{ env.VERSION }}.zip
-          asset_name: ScriptRunner-net8-${{ env.VERSION }}.zip
+          asset_path: ./artifacts/ScriptRunner-net10-${{ env.VERSION }}.zip
+          asset_name: ScriptRunner-net10-${{ env.VERSION }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

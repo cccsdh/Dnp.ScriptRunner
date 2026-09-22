@@ -204,7 +204,7 @@ GO
 The schema-generation prompts only appear in interactive mode. Running ScriptRunner with three arguments (database type, connection string, scripts directory) always goes straight to running scripts, bypassing every prompt above:
 
 ```bash
-dotnet ./bin/Release/net8.0/ScriptRunner.exe PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts"
+./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts"
 ```
 
 ---

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ScriptRunner – SQL Script Runner &amp; Schema Generator for .NET</title>
   <meta name="description" content="Free, open-source SQL script runner for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite. Run scripts from the command line or CI/CD, and generate schema create scripts (DDL) from a live database.">
-  <meta name="keywords" content="SQL script runner, run SQL scripts command line, database migration tool, generate create script from database, schema DDL generator, PostgreSQL, SQL Server, MySQL, Oracle, DB2, SQLite, .NET 8, CI/CD">
+  <meta name="keywords" content="SQL script runner, run SQL scripts command line, database migration tool, generate create script from database, schema DDL generator, PostgreSQL, SQL Server, MySQL, Oracle, DB2, SQLite, .NET 10, CI/CD">
   <meta name="author" content="S. Doug Hunt">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://cccsdh.github.io/Dnp.ScriptRunner/">
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="ScriptRunner">
   <meta property="og:url" content="https://cccsdh.github.io/Dnp.ScriptRunner/">
   <meta property="og:title" content="ScriptRunner – SQL Script Runner &amp; Schema Generator">
-  <meta property="og:description" content="Free, open-source .NET 8 tool to run SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite, and generate schema create scripts from a live database.">
+  <meta property="og:description" content="Free, open-source .NET 10 tool to run SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite, and generate schema create scripts from a live database.">
   <meta property="og:image" content="https://cccsdh.github.io/Dnp.ScriptRunner/images/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -32,12 +32,12 @@
     "@type": "SoftwareApplication",
     "name": "ScriptRunner",
     "alternateName": "Dnp.ScriptRunner",
-    "description": "A .NET 8 console application for running SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite in a reproducible, auditable way, with interactive and command-line (CI/CD) modes and schema create script (DDL) generation from a live database.",
+    "description": "A .NET 10 console application for running SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite in a reproducible, auditable way, with interactive and command-line (CI/CD) modes and schema create script (DDL) generation from a live database.",
     "url": "https://cccsdh.github.io/Dnp.ScriptRunner/",
     "applicationCategory": "DeveloperApplication",
     "applicationSubCategory": "Database tool",
     "operatingSystem": "Windows",
-    "softwareRequirements": ".NET 8 Runtime",
+    "softwareRequirements": ".NET 10 Runtime",
     "downloadUrl": "https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest",
     "installUrl": "https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest",
     "screenshot": [
@@ -69,7 +69,7 @@
     "name": "ScriptRunner",
     "codeRepository": "https://github.com/cccsdh/Dnp.ScriptRunner",
     "programmingLanguage": "C#",
-    "runtimePlatform": ".NET 8",
+    "runtimePlatform": ".NET 10",
     "license": "https://opensource.org/licenses/MIT",
     "author": { "@type": "Person", "name": "S. Doug Hunt" }
   }
@@ -124,7 +124,7 @@
       "name": "Is ScriptRunner free?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. ScriptRunner is open source under the MIT License. The prebuilt release is for Windows x64 and needs the .NET 8 runtime; you can also build it from source with the .NET 8 SDK."
+        "text": "Yes. ScriptRunner is open source under the MIT License. The prebuilt release is for Windows x64 and needs the .NET 10 runtime; you can also build it from source with the .NET 10 SDK."
       }
     }
   ]
@@ -393,7 +393,7 @@
 <main id="top">
   <div class="hero">
     <div class="wrap">
-      <span class="eyebrow">.NET 8 &middot; MIT licensed</span>
+      <span class="eyebrow">.NET 10 &middot; MIT licensed</span>
       <h1>Run SQL scripts<br><span class="hl">the same way, every time.</span></h1>
       <p class="lede">ScriptRunner is a free, open-source SQL script runner for <strong>PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite</strong>. Run scripts interactively or from the command line in CI/CD pipelines, and generate a full schema create script from any live database.</p>
       <div class="cta">
@@ -406,7 +406,7 @@
           View source
         </a>
       </div>
-      <p class="dl-meta" id="dl-meta">Windows x64 &middot; requires the <a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 runtime</a> &middot; <a href="https://github.com/cccsdh/Dnp.ScriptRunner/releases">All releases</a></p>
+      <p class="dl-meta" id="dl-meta">Windows x64 &middot; requires the <a href="https://dotnet.microsoft.com/download/dotnet/10.0">.NET 10 runtime</a> &middot; <a href="https://github.com/cccsdh/Dnp.ScriptRunner/releases">All releases</a></p>
       <div class="badges">
         <a href="https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml"><img src="https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml/badge.svg" alt=".NET Build and Publish status"></a>
       </div>
@@ -470,12 +470,12 @@
     <div class="wrap">
       <div class="section-head">
         <h2>Quick start: run SQL scripts from the command line</h2>
-        <p>Download a prebuilt Windows x64 release, or build it yourself with the .NET 8 SDK.</p>
+        <p>Download a prebuilt Windows x64 release, or build it yourself with the .NET 10 SDK.</p>
       </div>
       <div class="steps">
         <div class="step">
           <h3>1. Build</h3>
-          <p>Requires the <a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 SDK</a>.</p>
+          <p>Requires the <a href="https://dotnet.microsoft.com/download/dotnet/10.0">.NET 10 SDK</a>.</p>
           <div class="code"><button class="copy" type="button">Copy</button><pre><code>git clone https://github.com/cccsdh/Dnp.ScriptRunner.git
 cd Dnp.ScriptRunner
 dotnet restore
@@ -602,7 +602,7 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">P
         </details>
         <details>
           <summary><h3>Is ScriptRunner free?</h3></summary>
-          <p>Yes. ScriptRunner is open source under the MIT License. The prebuilt release is for Windows x64 and needs the .NET 8 runtime; you can also build it from source with the .NET 8 SDK.</p>
+          <p>Yes. ScriptRunner is open source under the MIT License. The prebuilt release is for Windows x64 and needs the .NET 10 runtime; you can also build it from source with the .NET 10 SDK.</p>
         </details>
       </div>
     </div>

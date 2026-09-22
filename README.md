@@ -2,14 +2,14 @@
 
 [![.NET Build and Publish](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml)
 
-ScriptRunner is a .NET 8 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
+ScriptRunner is a .NET 10 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
 
 For a walkthrough of every interactive prompt, including the schema create script feature, see the [User Guide](USER_GUIDE.md).
 
 
 ## Key features
 
-- Cross-platform .NET 8 application
+- Cross-platform .NET 10 application
 - Run one-off or batched scripts
 - Capture and persist stdout/stderr and exit codes
 - Designed to integrate with CI/CD pipelines
@@ -18,7 +18,7 @@ For a walkthrough of every interactive prompt, including the schema create scrip
 
 ## Requirements
 
-- .NET 8 SDK (https://dotnet.microsoft.com) 
+- .NET 10 SDK (https://dotnet.microsoft.com) 
 - Windows, macOS, or Linux
 
 ## Build
@@ -36,13 +36,13 @@ dotnet build --configuration Release
 Run the application (adjust project path if needed):
 
 ```bash
-dotnet run --project ./src/ScriptRunner/ScriptRunner.csproj
+dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj
 ```
 
 Or execute the produced binary from the `bin` folder after a build:
 
 ```bash
-dotnet ./bin/Release/net8.0/ScriptRunner.exe
+./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe
 ```
 
 ## Command-line (non-interactive) mode
@@ -52,13 +52,13 @@ ScriptRunner can be started non-interactively by providing three arguments: the 
 Usage:
 
 ```bash
-dotnet run --project ./src/ScriptRunner/ScriptRunner.csproj -- <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
+dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
 ```
 
 Or after building the binary:
 
 ```bash
-dotnet ./bin/Release/net8.0/ScriptRunner.exe <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
+./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
 ```
 
 Arguments:
@@ -69,7 +69,7 @@ Arguments:
 Example:
 
 ```bash
-dotnet run --project ./src/ScriptRunner/ScriptRunner.csproj -- PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts"
+dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts"
 ```
 
 When run in CLI mode, the application will automatically persist the supplied connection string and scripts directory into Settings if they are not already present.
