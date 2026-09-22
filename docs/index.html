@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ScriptRunner</title>
+  <meta name="description" content="ScriptRunner is a .NET 8 console tool for running SQL scripts against PostgreSQL, SQL Server, SQLite, MySQL, Oracle and DB2, and for generating schema create scripts from a live database.">
+  <meta property="og:title" content="ScriptRunner">
+  <meta property="og:description" content="Run SQL scripts reproducibly across six database providers, and generate schema create scripts from a live connection.">
+  <meta property="og:image" content="images/MainScreen.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface-2: #eef1f5;
+      --text: #1a1d23;
+      --muted: #5a6270;
+      --border: #dde2ea;
+      --accent: #0e8c8c;
+      --accent-strong: #0a6f6f;
+      --accent-2: #b8860b;
+      --code-bg: #0c0c0c;
+      --code-text: #d7dde6;
+      --shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0d0f12;
+        --surface: #15181d;
+        --surface-2: #1c2027;
+        --text: #e6e9ee;
+        --muted: #9aa3b2;
+        --border: #2a2f38;
+        --accent: #3fd0d0;
+        --accent-strong: #6fe0e0;
+        --accent-2: #e3b341;
+        --code-bg: #0a0a0a;
+        --code-text: #d7dde6;
+        --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0d0f12;
+      --surface: #15181d;
+      --surface-2: #1c2027;
+      --text: #e6e9ee;
+      --muted: #9aa3b2;
+      --border: #2a2f38;
+      --accent: #3fd0d0;
+      --accent-strong: #6fe0e0;
+      --accent-2: #e3b341;
+      --code-bg: #0a0a0a;
+      --code-text: #d7dde6;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; }
+    :not(pre) > code {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .05em .35em;
+      font-size: .88em;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+    /* Nav */
+    header.nav {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in srgb, var(--bg) 85%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    header.nav .wrap { display: flex; align-items: center; gap: 24px; height: 56px; }
+    .brand { font-family: "JetBrains Mono", monospace; font-weight: 600; color: var(--text); }
+    .brand span { color: var(--accent); }
+    header.nav nav { display: flex; gap: 20px; margin-left: auto; font-size: 14px; }
+    header.nav nav a { color: var(--muted); }
+    header.nav nav a:hover { color: var(--text); text-decoration: none; }
+    @media (max-width: 720px) { header.nav nav a.opt { display: none; } }
+
+    /* Hero */
+    .hero { padding: 72px 0 40px; text-align: center; }
+    .eyebrow {
+      display: inline-block; font: 600 12px/1 "JetBrains Mono", monospace;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--accent); border: 1px solid var(--border); background: var(--surface);
+      padding: 6px 10px; border-radius: 999px;
+    }
+    .hero h1 { font-size: clamp(36px, 6vw, 56px); line-height: 1.1; margin: 20px 0 16px; letter-spacing: -.02em; }
+    .hero h1 .hl { color: var(--accent); }
+    .hero p.lede { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted); max-width: 720px; margin: 0 auto 32px; }
+    .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    }
+    .btn:hover { text-decoration: none; border-color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    :root[data-theme="dark"] .btn.primary { color: #0b1414; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #0b1414; } }
+    .btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+    .btn svg { width: 18px; height: 18px; }
+    .dl-meta { margin: 14px 0 0; font-size: 14px; color: var(--muted); }
+    .badges { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .badges img { height: 20px; }
+
+    .terminal {
+      margin: 48px auto 0; max-width: 980px;
+      background: var(--code-bg); border-radius: 10px; overflow: hidden;
+      border: 1px solid #222; box-shadow: var(--shadow);
+    }
+    .terminal .bar { display: flex; gap: 6px; padding: 10px 12px; background: #1a1a1a; }
+    .terminal .bar i { width: 11px; height: 11px; border-radius: 50%; background: #444; display: block; }
+    .terminal .bar i:nth-child(1) { background: #ff5f57; }
+    .terminal .bar i:nth-child(2) { background: #febc2e; }
+    .terminal .bar i:nth-child(3) { background: #28c840; }
+    .terminal img { display: block; width: 100%; height: auto; }
+
+    /* Sections */
+    section { padding: 72px 0; }
+    section.alt { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .section-head { max-width: 680px; margin-bottom: 40px; }
+    .section-head h2 { font-size: clamp(26px, 3.5vw, 34px); line-height: 1.2; margin: 0 0 12px; letter-spacing: -.01em; }
+    .section-head p { color: var(--muted); margin: 0; font-size: 17px; }
+
+    .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 24px;
+    }
+    section.alt .card { background: var(--bg); }
+    .card .icon {
+      width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center;
+      background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .card .icon svg { width: 20px; height: 20px; }
+    .card h3 { margin: 0 0 6px; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .providers { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .providers span {
+      font: 600 14px/1 "JetBrains Mono", monospace;
+      padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+    }
+
+    /* Code */
+    .steps { display: grid; gap: 28px; }
+    .step h3 { margin: 0 0 4px; font-size: 18px; }
+    .step p { margin: 0 0 12px; color: var(--muted); }
+    .code {
+      position: relative; background: var(--code-bg); color: var(--code-text);
+      border-radius: 8px; border: 1px solid #222;
+    }
+    .code pre { margin: 0; padding: 16px 56px 16px 16px; overflow-x: auto; font-size: 14px; line-height: 1.55; }
+    .code .c { color: #6b7686; }
+    .code .k { color: #3fd0d0; }
+    .code .s { color: #e3b341; }
+    .copy {
+      position: absolute; top: 8px; right: 8px;
+      background: #1f1f1f; color: #aeb6c2; border: 1px solid #333; border-radius: 6px;
+      font: 500 12px/1 "Inter", sans-serif; padding: 6px 8px; cursor: pointer;
+    }
+    .copy:hover { color: #fff; border-color: #555; }
+
+    .args { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+    .args li { color: var(--muted); font-size: 15px; }
+    .args li code { color: var(--text); }
+
+    /* Schema split */
+    .split { display: grid; gap: 40px; grid-template-columns: 1fr 1fr; align-items: start; }
+    @media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+    ol.flow { counter-reset: f; list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+    ol.flow li { counter-increment: f; position: relative; padding-left: 44px; color: var(--muted); }
+    ol.flow li strong { color: var(--text); }
+    ol.flow li::before {
+      content: counter(f); position: absolute; left: 0; top: -2px;
+      width: 30px; height: 30px; border-radius: 50%;
+      display: grid; place-items: center;
+      font: 600 14px/1 "JetBrains Mono", monospace;
+      background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+    }
+    ul.check { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 8px; }
+    ul.check li { padding-left: 26px; position: relative; color: var(--muted); }
+    ul.check li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+    .shot { border-radius: 8px; border: 1px solid var(--border); overflow: hidden; background: var(--code-bg); }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot + .shot { margin-top: 16px; }
+
+    .table-wrap { overflow-x: auto; margin-top: 40px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+    table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 600; white-space: nowrap; }
+    td code { font-size: 12.5px; }
+
+    .note {
+      margin-top: 24px; padding: 16px 18px; border-radius: 8px;
+      border: 1px solid color-mix(in srgb, var(--accent-2) 45%, var(--border));
+      background: color-mix(in srgb, var(--accent-2) 8%, var(--surface));
+      font-size: 15px; color: var(--muted);
+    }
+    .note strong { color: var(--text); }
+    .note ul { margin: 8px 0 0; padding-left: 20px; }
+
+    /* Gallery */
+    .gallery { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .gallery figure { margin: 0; }
+    .gallery figure .shot { cursor: zoom-in; }
+    .gallery figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+
+    dialog#lightbox {
+      border: 0; padding: 0; background: transparent; max-width: min(1200px, 95vw);
+    }
+    dialog#lightbox::backdrop { background: rgba(0,0,0,.8); }
+    dialog#lightbox img { display: block; max-width: 100%; max-height: 90vh; border-radius: 8px; }
+
+    /* Footer */
+    footer { padding: 40px 0; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+    footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
+    .theme-toggle {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 6px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">&gt;_ Script<span>Runner</span></a>
+    <nav>
+      <a class="opt" href="#features">Features</a>
+      <a class="opt" href="#quick-start">Quick start</a>
+      <a class="opt" href="#schema">Schema scripts</a>
+      <a class="opt" href="#screens">Screens</a>
+      <a href="https://github.com/cccsdh/Dnp.ScriptRunner">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <span class="eyebrow">.NET 8 &middot; MIT licensed</span>
+      <h1>Run database scripts<br><span class="hl">the same way, every time.</span></h1>
+      <p class="lede">ScriptRunner is a console tool for running SQL scripts against six database providers in a reproducible, auditable way. It can also generate a full schema create script from a live connection.</p>
+      <div class="cta">
+        <a class="btn primary dl" href="https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="dl-label">Download latest release</span>
+        </a>
+        <a class="btn" href="https://github.com/cccsdh/Dnp.ScriptRunner">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+          View source
+        </a>
+      </div>
+      <p class="dl-meta" id="dl-meta">Windows x64 &middot; requires the <a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 runtime</a> &middot; <a href="https://github.com/cccsdh/Dnp.ScriptRunner/releases">All releases</a></p>
+      <div class="badges">
+        <a href="https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml"><img src="https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml/badge.svg" alt=".NET Build and Publish status"></a>
+      </div>
+      <div class="terminal" aria-label="ScriptRunner main screen">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <img src="images/MainScreen.png" alt="ScriptRunner main screen showing the database type selection menu" width="963" height="286">
+      </div>
+    </div>
+  </div>
+
+  <section id="features" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Built for operational SQL work</h2>
+        <p>A lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.</p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+          <h3>One-off or batched runs</h3>
+          <p>Pick a scripts folder, choose the files you want, and run them in order. The folder can hold <code>.sql</code> and <code>.txt</code> scripts.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div>
+          <h3>Auditable results</h3>
+          <p>Stdout, stderr and exit codes are captured and saved, so every run leaves a record.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <h3>CI/CD ready</h3>
+          <p>Pass three arguments to skip the interactive prompts entirely and run straight from a pipeline.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+          <h3>Schema create scripts</h3>
+          <p>Generate DDL for tables, views, functions, procedures and triggers from a live connection, built with each database's own reflection tools.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+          <h3>Optional data export</h3>
+          <p>Add <code>INSERT</code> statements for every existing row alongside the generated schema, with values formatted by column type.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+          <h3>Remembers your settings</h3>
+          <p>Connection strings and script folders are saved, so the next run is a couple of keypresses.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:48px">
+        <h3 style="margin:0 0 4px;font-size:18px">Supported databases</h3>
+        <div class="providers">
+          <span>PostgreSQL</span><span>SQL Server</span><span>SQLite</span><span>MySQL</span><span>Oracle</span><span>DB2</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quick-start">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Quick start</h2>
+        <p>Download a prebuilt Windows x64 release, or build it yourself with the .NET 8 SDK.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3>1. Build</h3>
+          <p>Requires the <a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 SDK</a>.</p>
+          <div class="code"><button class="copy" type="button">Copy</button><pre><code>git clone https://github.com/cccsdh/Dnp.ScriptRunner.git
+cd Dnp.ScriptRunner
+dotnet restore
+dotnet build --configuration Release</code></pre></div>
+        </div>
+        <div class="step">
+          <h3>2. Run interactively</h3>
+          <p>ScriptRunner prompts you for the database type, the connection and the scripts to run.</p>
+          <div class="code"><button class="copy" type="button">Copy</button><pre><code>dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj</code></pre></div>
+        </div>
+        <div class="step">
+          <h3>3. Or run non-interactively from the command line</h3>
+          <p>Supply the database type, connection string and scripts directory, and ScriptRunner skips the prompts and processes the folder straight away.</p>
+          <div class="code"><button class="copy" type="button">Copy</button><pre><code><span class="c"># &lt;DatabaseType&gt; "&lt;ConnectionString&gt;" "&lt;ScriptsDirectory&gt;"</span>
+dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">PostgreSQL</span> <span class="s">"Host=localhost;Username=app;Password=pass;Database=mydb"</span> <span class="s">"C:\scripts"</span></code></pre></div>
+          <ul class="args">
+            <li><code>DatabaseType</code>: one of <code>PostgreSQL</code>, <code>SqlServer</code>, <code>Sqlite</code>, <code>MySQL</code>, <code>Oracle</code>, <code>DB2</code></li>
+            <li><code>ConnectionString</code>: the full connection string for the provider (quote it if it contains spaces)</li>
+            <li><code>ScriptsDirectory</code>: full path to the folder of <code>.sql</code> and <code>.txt</code> scripts</li>
+          </ul>
+          <p style="margin-top:12px">In CLI mode, the connection string and scripts directory are saved to Settings if they aren't already there.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="schema" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Generate a schema create script</h2>
+        <p>Point ScriptRunner at an existing database and get back a single <code>.sql</code> file that recreates it.</p>
+      </div>
+      <div class="split">
+        <div>
+          <ol class="flow">
+            <li>After choosing a connection, answer <strong>Yes</strong> to <em>“Generate a schema create script for this connection?”</em></li>
+            <li>Choose whether to <strong>include data</strong> as <code>INSERT</code> statements for each table.</li>
+            <li>Pick or create an <strong>output directory</strong>. It's created automatically if it doesn't exist.</li>
+            <li>ScriptRunner writes <code>schema-create-&lt;DatabaseType&gt;-&lt;timestamp&gt;.sql</code> and exits. No scripts run in this mode.</li>
+          </ol>
+          <ul class="check">
+            <li><code>CREATE SCHEMA</code> statements for providers that have a schema concept</li>
+            <li><code>CREATE TABLE</code> with columns, defaults, identity columns, keys, constraints and indexes</li>
+            <li>Views, functions, stored procedures and triggers</li>
+            <li>Optionally, an <code>INSERT INTO</code> for every existing row</li>
+          </ul>
+        </div>
+        <div>
+          <div class="shot"><img src="images/GenerateCreateScript.png" alt="Prompt asking whether to generate a schema create script" loading="lazy"></div>
+          <div class="shot"><img src="images/IncludeData.png" alt="Prompt asking whether to include data as INSERT statements" loading="lazy"></div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Provider</th><th>Schema statement</th><th>Table DDL source</th><th>Views / functions / procedures / triggers</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>PostgreSQL</td><td><code>CREATE SCHEMA IF NOT EXISTS</code></td><td><code>information_schema</code> + <code>pg_constraint</code> / <code>pg_indexes</code></td><td><code>pg_get_viewdef</code>, <code>pg_get_functiondef</code>, <code>pg_get_triggerdef</code></td></tr>
+            <tr><td>SQL Server</td><td>Guarded <code>CREATE SCHEMA</code> (skipped for <code>dbo</code>)</td><td><code>sys.columns</code> + <code>sys.key_constraints</code> / <code>sys.foreign_keys</code> / <code>sys.indexes</code></td><td><code>sys.sql_modules.definition</code>, each object separated by <code>GO</code></td></tr>
+            <tr><td>MySQL</td><td><code>CREATE SCHEMA IF NOT EXISTS</code> + <code>USE</code></td><td><code>SHOW CREATE TABLE</code></td><td><code>SHOW CREATE VIEW</code> / <code>PROCEDURE</code> / <code>FUNCTION</code> / <code>TRIGGER</code></td></tr>
+            <tr><td>Oracle</td><td>Not applicable (schema is the connected user)</td><td><code>DBMS_METADATA.GET_DDL('TABLE', ...)</code></td><td><code>DBMS_METADATA.GET_DDL</code> for each object type</td></tr>
+            <tr><td>DB2</td><td><code>CREATE SCHEMA</code></td><td><code>SYSCAT.COLUMNS</code> + <code>SYSCAT.TABCONST</code> / <code>SYSCAT.REFERENCES</code> / <code>SYSCAT.INDEXES</code></td><td><code>SYSCAT.VIEWS</code> / <code>SYSCAT.ROUTINES</code> / <code>SYSCAT.TRIGGERS</code></td></tr>
+            <tr><td>SQLite</td><td>Not applicable</td><td>Original <code>CREATE TABLE</code> text from <code>sqlite_master</code></td><td>Read from <code>sqlite_master</code> (SQLite has no procedures or functions)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <strong>Good to know</strong>
+        <ul>
+          <li>If one object can't be scripted, for example because of a permissions issue, a <code>-- Failed to generate DDL for ...</code> comment is written in its place and generation carries on.</li>
+          <li>SQL Server tables with an identity column are wrapped in <code>SET IDENTITY_INSERT ... ON/OFF</code> so existing key values are kept.</li>
+          <li>Data is scripted in schema order, not foreign-key dependency order. You may need to reorder statements or disable constraint checks when loading into a fresh database.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="screens">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>A tour of the prompts</h2>
+        <p>Every step is a keyboard-driven console prompt. Select a screenshot to enlarge it.</p>
+      </div>
+      <div class="gallery">
+        <figure><div class="shot"><img src="images/MainScreen.png" alt="Main screen" loading="lazy"></div><figcaption>Main screen: choose a database type</figcaption></figure>
+        <figure><div class="shot"><img src="images/Connection.png" alt="Connection screen" loading="lazy"></div><figcaption>Connection: enter or pick a saved connection string</figcaption></figure>
+        <figure><div class="shot"><img src="images/Scripts.png" alt="Script management screen" loading="lazy"></div><figcaption>Script management: choose the scripts folder</figcaption></figure>
+        <figure><div class="shot"><img src="images/ScriptSelection.png" alt="Script selection screen" loading="lazy"></div><figcaption>Script selection: pick which files to run</figcaption></figure>
+        <figure><div class="shot"><img src="images/EndOfRun.png" alt="End of run screen" loading="lazy"></div><figcaption>End of run: results summary</figcaption></figure>
+        <figure><div class="shot"><img src="images/GenerateCreateScript.png" alt="Generate create script screen" loading="lazy"></div><figcaption>Generate a schema create script</figcaption></figure>
+      </div>
+      <p style="margin-top:32px;color:var(--muted)">Want every prompt explained? Read the <a href="https://github.com/cccsdh/Dnp.ScriptRunner/blob/main/USER_GUIDE.md">User Guide</a>.</p>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="wrap">
+      <div class="section-head" style="margin-bottom:24px">
+        <h2>Contributing</h2>
+        <p>Contributions are welcome. Fork the repository, create a feature branch, add tests and documentation, and open a pull request describing your changes. For questions or support, <a href="https://github.com/cccsdh/Dnp.ScriptRunner/issues">open an issue</a>.</p>
+      </div>
+      <div class="cta" style="justify-content:flex-start">
+        <a class="btn primary dl" href="https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest"><span class="dl-label">Download latest release</span></a>
+        <a class="btn" href="https://github.com/cccsdh/Dnp.ScriptRunner/issues">Report an issue</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>&copy; 2026 Doughnuts Publishing &middot; Released under the <a href="https://github.com/cccsdh/Dnp.ScriptRunner/blob/main/LICENSE">MIT License</a></span>
+    <nav>
+      <a href="https://github.com/cccsdh/Dnp.ScriptRunner">Source</a>
+      <a href="https://github.com/cccsdh/Dnp.ScriptRunner/releases">Releases</a>
+      <a href="https://github.com/cccsdh/Dnp.ScriptRunner/blob/main/USER_GUIDE.md">User Guide</a>
+      <button class="theme-toggle" type="button" id="theme-toggle">Toggle theme</button>
+    </nav>
+  </div>
+</footer>
+
+<dialog id="lightbox"><img alt=""></dialog>
+
+<script>
+  // Point download buttons at the latest release's zip. Asset names include the
+  // version, so there is no stable direct URL; fall back to releases/latest on failure.
+  fetch('https://api.github.com/repos/cccsdh/Dnp.ScriptRunner/releases/latest', {
+    headers: { 'Accept': 'application/vnd.github+json' }
+  })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (rel) {
+      var asset = (rel.assets || []).find(function (a) { return /\.zip$/i.test(a.name); });
+      if (!asset) return;
+      var version = rel.tag_name;
+      var mb = (asset.size / 1048576).toFixed(0);
+      document.querySelectorAll('a.dl').forEach(function (a) {
+        a.href = asset.browser_download_url;
+        a.setAttribute('download', '');
+        a.querySelector('.dl-label').textContent = 'Download ' + version;
+      });
+      var date = new Date(rel.published_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      var meta = document.getElementById('dl-meta');
+      meta.insertAdjacentHTML('afterbegin',
+        '<a href="' + rel.html_url + '">' + asset.name + '</a> &middot; ' + mb + ' MB &middot; ' + date + ' &middot; ');
+    })
+    .catch(function () {});
+
+  // Copy buttons
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.parentElement.querySelector('code').innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+      });
+    });
+  });
+
+  // Lightbox for gallery screenshots
+  var lb = document.getElementById('lightbox');
+  var lbImg = lb.querySelector('img');
+  document.querySelectorAll('.gallery .shot img').forEach(function (img) {
+    img.addEventListener('click', function () {
+      lbImg.src = img.src;
+      lbImg.alt = img.alt;
+      lb.showModal();
+    });
+  });
+  lb.addEventListener('click', function () { lb.close(); });
+
+  // Theme toggle (remembered per browser)
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem('sr-theme');
+    if (saved) root.setAttribute('data-theme', saved);
+  } catch (e) {}
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') ||
+      (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('sr-theme', next); } catch (e) {}
+  });
+</script>
+</body>
+</html>
