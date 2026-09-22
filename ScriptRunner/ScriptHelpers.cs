@@ -22,6 +22,21 @@ namespace Dnp.ScriptRunner
             {"</DnPTxt>", "txt_close"}
         };
 
+        // Script paths may be written with either '\' or '/' separators; map both to the
+        // current OS separator so the same scripts resolve on Windows and Linux.
+        public static string NormalizeSeparators(string path) =>
+            path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+
+        // Resolve a script-referenced path against a base directory. Rooted paths are returned as-is.
+        public static string ResolvePath(string path, string? baseDirectory)
+        {
+            var normalized = NormalizeSeparators(path);
+            return Path.IsPathRooted(normalized) ? normalized : Path.GetFullPath(Path.Combine(baseDirectory ?? string.Empty, normalized));
+        }
+
+        // File names are case-insensitive on Windows but case-sensitive on Linux.
+        public static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
         // Try to find any configured marker pair in the sql and extract the path and type
         public static bool TryExtractEmbeddedFileTag(string sql, Dictionary<string, string> markers, out string openTag, out string closeTag, out string relativePath, out string fileType)
         {
@@ -215,7 +230,7 @@ namespace Dnp.ScriptRunner
             // loop until no more tags found
             while (TryExtractEmbeddedFileTag(output, markers, out var openTag, out var closeTag, out var relativePath, out var fileType))
             {
-                var filePath = Path.IsPathRooted(relativePath) ? relativePath : Path.GetFullPath(Path.Combine(baseDirectory ?? string.Empty, relativePath));
+                var filePath = ResolvePath(relativePath, baseDirectory);
                 string fileContent;
                 try
                 {

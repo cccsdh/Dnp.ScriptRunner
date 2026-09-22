@@ -154,10 +154,10 @@ namespace Dnp.ScriptRunner
         public static List<string> ExpandFiles(IEnumerable<string> selectedFiles, string baseDirectory)
         {
             var result = new List<string>();
-            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var visited = new HashSet<string>(ScriptHelpers.PathComparer);
             foreach (var f in selectedFiles)
             {
-                var full = Path.GetFullPath(Path.Combine(baseDirectory, f));
+                var full = ScriptHelpers.ResolvePath(f, baseDirectory);
                 ExpandRecursive(full, result, visited);
             }
             return result;
@@ -183,16 +183,12 @@ namespace Dnp.ScriptRunner
                     if (trimmed.StartsWith(">>"))
                     {
                         var referenced = trimmed.Substring(2).Trim();
-                        var referencedFull = Path.IsPathRooted(referenced)
-                            ? referenced
-                            : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, referenced));
+                        var referencedFull = ScriptHelpers.ResolvePath(referenced, Path.GetDirectoryName(filePath));
                         ExpandRecursive(referencedFull, output, visited);
                     }
                     else
                     {
-                        var candidate = Path.IsPathRooted(trimmed)
-                            ? trimmed
-                            : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, trimmed));
+                        var candidate = ScriptHelpers.ResolvePath(trimmed, Path.GetDirectoryName(filePath));
                         if (File.Exists(candidate) && candidate.EndsWith(".sql", StringComparison.OrdinalIgnoreCase))
                             output.Add(candidate);
                     }
@@ -345,17 +341,13 @@ namespace Dnp.ScriptRunner
                     if (line.StartsWith(">>"))
                     {
                         var referenced = line.Substring(2).Trim();
-                        var referencedFull = Path.IsPathRooted(referenced)
-                            ? referenced
-                            : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, referenced));
+                        var referencedFull = ScriptHelpers.ResolvePath(referenced, Path.GetDirectoryName(filePath));
                         await writer.WriteLineAsync($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Nested list reference: {referencedFull}");
                         await ProcessPathAsync(referencedFull, executor, visited, ct, writer);
                     }
                     else
                     {
-                        var candidate = Path.IsPathRooted(line)
-                            ? line
-                            : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, line));
+                        var candidate = ScriptHelpers.ResolvePath(line, Path.GetDirectoryName(filePath));
 
                         var candidateExt = Path.GetExtension(candidate) ?? string.Empty;
                         if (candidateExt.Equals(".sql", StringComparison.OrdinalIgnoreCase) || candidateExt.Equals(".txt", StringComparison.OrdinalIgnoreCase))

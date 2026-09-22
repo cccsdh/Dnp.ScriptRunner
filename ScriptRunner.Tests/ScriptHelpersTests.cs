@@ -83,6 +83,38 @@ namespace Dnp.ScriptRunner.Tests
         }
 
         [TestMethod]
+        public void ReplaceEmbeddedTags_BackslashRelativePath_ResolvesOnAnyOs()
+        {
+            var tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tmp);
+            try
+            {
+                var langDir = Path.Combine(tmp, "languages");
+                Directory.CreateDirectory(langDir);
+                File.WriteAllText(Path.Combine(langDir, "China.json"), "[{ \"Language\": \"Mandarin\" }]");
+
+                var scriptsDir = Path.Combine(tmp, "scripts");
+                Directory.CreateDirectory(scriptsDir);
+                var sql = "INSERT INTO Countries (Languages) VALUES (<DnPTxt>..\\languages\\China.json</DnPTxt>);";
+
+                var replaced = ScriptHelpers.ReplaceEmbeddedTags(sql, scriptsDir, ScriptHelpers.DefaultMarkers, enableDetection: true);
+                Assert.IsTrue(replaced.Contains("Mandarin"));
+            }
+            finally
+            {
+                Directory.Delete(tmp, true);
+            }
+        }
+
+        [TestMethod]
+        public void ResolvePath_MixedSeparators_UsesOsSeparator()
+        {
+            var baseDir = Path.Combine(Path.GetTempPath(), "base");
+            var resolved = ScriptHelpers.ResolvePath("sub\\dir/file.sql", baseDir);
+            Assert.AreEqual(Path.GetFullPath(Path.Combine(baseDir, "sub", "dir", "file.sql")), resolved);
+        }
+
+        [TestMethod]
         public void ReplaceEmbeddedTags_XmlDetection_Works()
         {
             var tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());

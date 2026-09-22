@@ -4,7 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Defaults to the OS doing the build; pass -r win-x64 or -r linux-x64 to target a specific platform. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <PublishTrimmed>false</PublishTrimmed>
@@ -22,7 +23,13 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.8" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.200" />
-    <PackageReference Include="IBM.Data.DB2.Core" Version="3.1.0.600" />
+  </ItemGroup>
+  <!-- IBM ships a separate DB2 driver package per OS; both expose the IBM.Data.Db2 namespace. -->
+  <ItemGroup Condition="$(RuntimeIdentifier.StartsWith('linux'))">
+    <PackageReference Include="Net.IBM.Data.Db2-lnx" Version="10.0.0.200" />
+  </ItemGroup>
+  <ItemGroup Condition="!$(RuntimeIdentifier.StartsWith('linux'))">
+    <PackageReference Include="Net.IBM.Data.Db2" Version="10.0.0.200" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="images\" />

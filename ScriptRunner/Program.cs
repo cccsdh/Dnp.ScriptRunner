@@ -16,7 +16,7 @@ using Spectre.Console;
 using System.Threading.Channels;
 using MySql.Data.MySqlClient;
 using Oracle.ManagedDataAccess.Client;
-using IBM.Data.DB2.Core;
+using IBM.Data.Db2;
 using System.Threading.Tasks;
 using System;
 using System.IO;
@@ -190,13 +190,13 @@ namespace Dnp.ScriptRunner
                 AnsiConsole.MarkupLine("[green]Connection opened.[/]");
 
                 // Preserve choice order (files list order) when queuing selected items
-                var selectedSet = new HashSet<string>(selected, StringComparer.OrdinalIgnoreCase);
+                var selectedSet = new HashSet<string>(selected, ScriptHelpers.PathComparer);
                 var orderedSelectedFullPaths = files
                     .Where(f => selectedSet.Contains(f))
                     .Select(f => Path.GetFullPath(Path.Combine(scriptDir, f)))
                     .ToList();
 
-                var visitedGlobal = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var visitedGlobal = new HashSet<string>(ScriptHelpers.PathComparer);
                 var total = orderedSelectedFullPaths.Count;
                 var index = 0;
 

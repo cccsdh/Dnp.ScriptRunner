@@ -6,7 +6,7 @@
  * Licensed under the MIT License. See LICENSE in project root for license details.
  */
 
-using IBM.Data.DB2.Core;
+using IBM.Data.Db2;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;

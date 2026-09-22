@@ -1,6 +1,7 @@
 # ScriptRunner
 
-[![.NET Build and Publish](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/dotnet-build.yml)
+[![Windows Build and Release](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-windows.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-windows.yml)
+[![Linux Build and Release](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-linux.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-linux.yml)
 
 ScriptRunner is a .NET 10 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
 
@@ -9,7 +10,7 @@ For a walkthrough of every interactive prompt, including the schema create scrip
 
 ## Key features
 
-- Cross-platform .NET 10 application
+- .NET 10 application for Windows x64 and Linux x64
 - Run one-off or batched scripts
 - Capture and persist stdout/stderr and exit codes
 - Designed to integrate with CI/CD pipelines
@@ -18,11 +19,19 @@ For a walkthrough of every interactive prompt, including the schema create scrip
 
 ## Requirements
 
-- .NET 10 SDK (https://dotnet.microsoft.com) 
-- Windows, macOS, or Linux
+- Windows x64 or Linux x64
+- .NET 10 runtime to run a prebuilt release, or the .NET 10 SDK to build from source (https://dotnet.microsoft.com)
+
+## Download
+
+Each release on the [Releases](https://github.com/cccsdh/Dnp.ScriptRunner/releases) page has one download per platform:
+
+- Windows x64: `ScriptRunner-win-x64-<version>.zip`, run `Dnp.ScriptRunner.exe`
+- Linux x64: `ScriptRunner-linux-x64-<version>.tar.gz`, extract with `tar -xzf` and run `./Dnp.ScriptRunner`
+
+Each platform is built and released by its own GitHub Actions workflow (`build-windows.yml` and `build-linux.yml`). Both publish into the same release for a given commit.
 
 ## Build
-
 
 Restore packages and build the solution:
 
@@ -30,6 +39,15 @@ Restore packages and build the solution:
 dotnet restore
 dotnet build --configuration Release
 ```
+
+A build targets the operating system you build on. To produce a build for a specific platform, publish with a runtime identifier:
+
+```bash
+dotnet publish ./ScriptRunner/Dnp.ScriptRunner.csproj -c Release -r win-x64 --self-contained false -o ./publish/win-x64
+dotnet publish ./ScriptRunner/Dnp.ScriptRunner.csproj -c Release -r linux-x64 --self-contained false -o ./publish/linux-x64
+```
+
+The DB2 driver comes from a different IBM package on each platform (`Net.IBM.Data.Db2` on Windows, `Net.IBM.Data.Db2-lnx` on Linux). The project picks the right one from the runtime identifier.
 
 ## Run
 
@@ -42,8 +60,14 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj
 Or execute the produced binary from the `bin` folder after a build:
 
 ```bash
+# Windows
 ./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe
+
+# Linux
+./ScriptRunner/bin/Release/net10.0/linux-x64/Dnp.ScriptRunner
 ```
+
+Paths inside scripts (`.txt` list entries and embedded file tags such as `<DnPTxt>..\languages\China.json</DnPTxt>`) can use either `\` or `/`, so the same scripts run on both Windows and Linux. On Linux, file names are case-sensitive.
 
 ## Command-line (non-interactive) mode
 
@@ -55,7 +79,7 @@ Usage:
 dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
 ```
 
-Or after building the binary:
+Or after building the binary (on Linux, use `linux-x64/Dnp.ScriptRunner`):
 
 ```bash
 ./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
