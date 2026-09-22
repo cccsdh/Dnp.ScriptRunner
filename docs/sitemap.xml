@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://cccsdh.github.io/Dnp.ScriptRunner/</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image><image:loc>https://cccsdh.github.io/Dnp.ScriptRunner/images/MainScreen.png</image:loc></image:image>
+    <image:image><image:loc>https://cccsdh.github.io/Dnp.ScriptRunner/images/Connection.png</image:loc></image:image>
+    <image:image><image:loc>https://cccsdh.github.io/Dnp.ScriptRunner/images/Scripts.png</image:loc></image:image>
+    <image:image><image:loc>https://cccsdh.github.io/Dnp.ScriptRunner/images/ScriptSelection.png</image:loc></image:image>
+    <image:image><image:loc>https://cccsdh.github.io/Dnp.ScriptRunner/images/EndOfRun.png</image:loc></image:image>
+    <image:image><image:loc>https://cccsdh.github.io/Dnp.ScriptRunner/images/GenerateCreateScript.png</image:loc></image:image>
+    <image:image><image:loc>https://cccsdh.github.io/Dnp.ScriptRunner/images/IncludeData.png</image:loc></image:image>
+  </url>
+</urlset>

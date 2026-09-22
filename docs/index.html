@@ -3,11 +3,133 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ScriptRunner</title>
-  <meta name="description" content="ScriptRunner is a .NET 8 console tool for running SQL scripts against PostgreSQL, SQL Server, SQLite, MySQL, Oracle and DB2, and for generating schema create scripts from a live database.">
-  <meta property="og:title" content="ScriptRunner">
-  <meta property="og:description" content="Run SQL scripts reproducibly across six database providers, and generate schema create scripts from a live connection.">
-  <meta property="og:image" content="images/MainScreen.png">
+  <title>ScriptRunner – SQL Script Runner &amp; Schema Generator for .NET</title>
+  <meta name="description" content="Free, open-source SQL script runner for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite. Run scripts from the command line or CI/CD, and generate schema create scripts (DDL) from a live database.">
+  <meta name="keywords" content="SQL script runner, run SQL scripts command line, database migration tool, generate create script from database, schema DDL generator, PostgreSQL, SQL Server, MySQL, Oracle, DB2, SQLite, .NET 8, CI/CD">
+  <meta name="author" content="S. Doug Hunt">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://cccsdh.github.io/Dnp.ScriptRunner/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#0d0f12">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ScriptRunner">
+  <meta property="og:url" content="https://cccsdh.github.io/Dnp.ScriptRunner/">
+  <meta property="og:title" content="ScriptRunner – SQL Script Runner &amp; Schema Generator">
+  <meta property="og:description" content="Free, open-source .NET 8 tool to run SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite, and generate schema create scripts from a live database.">
+  <meta property="og:image" content="https://cccsdh.github.io/Dnp.ScriptRunner/images/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ScriptRunner: run SQL scripts and generate schema create scripts for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ScriptRunner – SQL Script Runner &amp; Schema Generator">
+  <meta name="twitter:description" content="Run SQL scripts from the console or CI/CD and generate schema create scripts from a live database. Six providers, free and open source.">
+  <meta name="twitter:image" content="https://cccsdh.github.io/Dnp.ScriptRunner/images/og-image.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ScriptRunner",
+    "alternateName": "Dnp.ScriptRunner",
+    "description": "A .NET 8 console application for running SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite in a reproducible, auditable way, with interactive and command-line (CI/CD) modes and schema create script (DDL) generation from a live database.",
+    "url": "https://cccsdh.github.io/Dnp.ScriptRunner/",
+    "applicationCategory": "DeveloperApplication",
+    "applicationSubCategory": "Database tool",
+    "operatingSystem": "Windows",
+    "softwareRequirements": ".NET 8 Runtime",
+    "downloadUrl": "https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest",
+    "installUrl": "https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest",
+    "screenshot": [
+      "https://cccsdh.github.io/Dnp.ScriptRunner/images/MainScreen.png",
+      "https://cccsdh.github.io/Dnp.ScriptRunner/images/ScriptSelection.png",
+      "https://cccsdh.github.io/Dnp.ScriptRunner/images/GenerateCreateScript.png"
+    ],
+    "image": "https://cccsdh.github.io/Dnp.ScriptRunner/images/og-image.png",
+    "license": "https://opensource.org/licenses/MIT",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "S. Doug Hunt" },
+    "publisher": { "@type": "Organization", "name": "Doughnuts Publishing" },
+    "sameAs": ["https://github.com/cccsdh/Dnp.ScriptRunner"],
+    "featureList": [
+      "Run one-off or batched SQL scripts",
+      "Non-interactive command-line mode for CI/CD pipelines",
+      "Capture stdout, stderr and exit codes",
+      "Generate schema create scripts (DDL) from a live database",
+      "Optional INSERT statements for existing table data",
+      "Supports PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    "name": "ScriptRunner",
+    "codeRepository": "https://github.com/cccsdh/Dnp.ScriptRunner",
+    "programmingLanguage": "C#",
+    "runtimePlatform": ".NET 8",
+    "license": "https://opensource.org/licenses/MIT",
+    "author": { "@type": "Person", "name": "S. Doug Hunt" }
+  }
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I run SQL scripts from the command line?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pass three arguments: the database type, the connection string and the scripts directory, for example Dnp.ScriptRunner.exe PostgreSQL \"Host=localhost;Database=mydb;...\" \"C:\\scripts\". ScriptRunner skips the interactive prompts and runs the scripts in that folder, which makes it suitable for CI/CD pipelines."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which databases does ScriptRunner support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PostgreSQL, Microsoft SQL Server, MySQL, Oracle, IBM DB2 and SQLite."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I generate a CREATE script from an existing database?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In interactive mode, choose a connection and answer Yes to “Generate a schema create script for this connection?”. ScriptRunner writes a single .sql file containing CREATE SCHEMA, CREATE TABLE (with keys, constraints and indexes), views, functions, stored procedures and triggers, built with the database's own DDL reflection."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can ScriptRunner export table data as INSERT statements?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. When generating a schema create script you can choose to include an INSERT INTO statement for every existing row. Values are formatted by column type, and SQL Server identity columns are wrapped in SET IDENTITY_INSERT."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What types of script files can it run?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ScriptRunner runs .sql and .txt script files from the folder you choose."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is ScriptRunner free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. ScriptRunner is open source under the MIT License. The prebuilt release is for Windows x64 and needs the .NET 8 runtime; you can also build it from source with the .NET 8 SDK."
+      }
+    }
+  ]
+}
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -232,6 +354,16 @@
     dialog#lightbox::backdrop { background: rgba(0,0,0,.8); }
     dialog#lightbox img { display: block; max-width: 100%; max-height: 90vh; border-radius: 8px; }
 
+    /* FAQ */
+    .faq { display: grid; gap: 12px; max-width: 820px; }
+    .faq details { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 20px; }
+    .faq summary { cursor: pointer; list-style: none; padding: 16px 28px 16px 0; position: relative; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; position: absolute; right: 0; top: 14px; font-size: 20px; color: var(--accent); }
+    .faq details[open] summary::after { content: "2"; }
+    .faq summary h3 { display: inline; margin: 0; font-size: 16px; font-weight: 600; }
+    .faq details p { margin: 0 0 18px; color: var(--muted); font-size: 15px; }
+
     /* Footer */
     footer { padding: 40px 0; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
     footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
@@ -252,6 +384,7 @@
       <a class="opt" href="#quick-start">Quick start</a>
       <a class="opt" href="#schema">Schema scripts</a>
       <a class="opt" href="#screens">Screens</a>
+      <a class="opt" href="#faq">FAQ</a>
       <a href="https://github.com/cccsdh/Dnp.ScriptRunner">GitHub</a>
     </nav>
   </div>
@@ -261,8 +394,8 @@
   <div class="hero">
     <div class="wrap">
       <span class="eyebrow">.NET 8 &middot; MIT licensed</span>
-      <h1>Run database scripts<br><span class="hl">the same way, every time.</span></h1>
-      <p class="lede">ScriptRunner is a console tool for running SQL scripts against six database providers in a reproducible, auditable way. It can also generate a full schema create script from a live connection.</p>
+      <h1>Run SQL scripts<br><span class="hl">the same way, every time.</span></h1>
+      <p class="lede">ScriptRunner is a free, open-source SQL script runner for <strong>PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite</strong>. Run scripts interactively or from the command line in CI/CD pipelines, and generate a full schema create script from any live database.</p>
       <div class="cta">
         <a class="btn primary dl" href="https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -287,7 +420,7 @@
   <section id="features" class="alt">
     <div class="wrap">
       <div class="section-head">
-        <h2>Built for operational SQL work</h2>
+        <h2>A SQL script runner built for operational work</h2>
         <p>A lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.</p>
       </div>
       <div class="grid">
@@ -325,6 +458,7 @@
 
       <div style="margin-top:48px">
         <h3 style="margin:0 0 4px;font-size:18px">Supported databases</h3>
+        <p style="margin:0 0 12px;color:var(--muted);font-size:15px">One tool for every database you work with, using each provider's native .NET data driver.</p>
         <div class="providers">
           <span>PostgreSQL</span><span>SQL Server</span><span>SQLite</span><span>MySQL</span><span>Oracle</span><span>DB2</span>
         </div>
@@ -335,7 +469,7 @@
   <section id="quick-start">
     <div class="wrap">
       <div class="section-head">
-        <h2>Quick start</h2>
+        <h2>Quick start: run SQL scripts from the command line</h2>
         <p>Download a prebuilt Windows x64 release, or build it yourself with the .NET 8 SDK.</p>
       </div>
       <div class="steps">
@@ -371,7 +505,7 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">P
   <section id="schema" class="alt">
     <div class="wrap">
       <div class="section-head">
-        <h2>Generate a schema create script</h2>
+        <h2>Generate a create script from an existing database</h2>
         <p>Point ScriptRunner at an existing database and get back a single <code>.sql</code> file that recreates it.</p>
       </div>
       <div class="split">
@@ -390,8 +524,8 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">P
           </ul>
         </div>
         <div>
-          <div class="shot"><img src="images/GenerateCreateScript.png" alt="Prompt asking whether to generate a schema create script" loading="lazy"></div>
-          <div class="shot"><img src="images/IncludeData.png" alt="Prompt asking whether to include data as INSERT statements" loading="lazy"></div>
+          <div class="shot"><img src="images/GenerateCreateScript.png" alt="Prompt asking whether to generate a schema create script" loading="lazy" width="961" height="172"></div>
+          <div class="shot"><img src="images/IncludeData.png" alt="Prompt asking whether to include data as INSERT statements" loading="lazy" width="955" height="182"></div>
         </div>
       </div>
 
@@ -425,18 +559,52 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">P
   <section id="screens">
     <div class="wrap">
       <div class="section-head">
-        <h2>A tour of the prompts</h2>
+        <h2>Screenshots: a tour of the prompts</h2>
         <p>Every step is a keyboard-driven console prompt. Select a screenshot to enlarge it.</p>
       </div>
       <div class="gallery">
-        <figure><div class="shot"><img src="images/MainScreen.png" alt="Main screen" loading="lazy"></div><figcaption>Main screen: choose a database type</figcaption></figure>
-        <figure><div class="shot"><img src="images/Connection.png" alt="Connection screen" loading="lazy"></div><figcaption>Connection: enter or pick a saved connection string</figcaption></figure>
-        <figure><div class="shot"><img src="images/Scripts.png" alt="Script management screen" loading="lazy"></div><figcaption>Script management: choose the scripts folder</figcaption></figure>
-        <figure><div class="shot"><img src="images/ScriptSelection.png" alt="Script selection screen" loading="lazy"></div><figcaption>Script selection: pick which files to run</figcaption></figure>
-        <figure><div class="shot"><img src="images/EndOfRun.png" alt="End of run screen" loading="lazy"></div><figcaption>End of run: results summary</figcaption></figure>
-        <figure><div class="shot"><img src="images/GenerateCreateScript.png" alt="Generate create script screen" loading="lazy"></div><figcaption>Generate a schema create script</figcaption></figure>
+        <figure><div class="shot"><img src="images/MainScreen.png" alt="ScriptRunner main screen: choose PostgreSQL, SQL Server, SQLite, MySQL, Oracle or DB2" loading="lazy" width="963" height="286"></div><figcaption>Main screen: choose a database type</figcaption></figure>
+        <figure><div class="shot"><img src="images/Connection.png" alt="ScriptRunner connection screen: enter or select a saved database connection string" loading="lazy" width="975" height="209"></div><figcaption>Connection: enter or pick a saved connection string</figcaption></figure>
+        <figure><div class="shot"><img src="images/Scripts.png" alt="ScriptRunner script management screen: choose the folder of SQL scripts" loading="lazy" width="945" height="230"></div><figcaption>Script management: choose the scripts folder</figcaption></figure>
+        <figure><div class="shot"><img src="images/ScriptSelection.png" alt="ScriptRunner script selection screen: pick which SQL scripts to run" loading="lazy" width="958" height="291"></div><figcaption>Script selection: pick which files to run</figcaption></figure>
+        <figure><div class="shot"><img src="images/EndOfRun.png" alt="ScriptRunner end of run screen: summary of executed SQL scripts" loading="lazy" width="960" height="205"></div><figcaption>End of run: results summary</figcaption></figure>
+        <figure><div class="shot"><img src="images/GenerateCreateScript.png" alt="ScriptRunner prompt to generate a schema create script from the database" loading="lazy" width="961" height="172"></div><figcaption>Generate a schema create script</figcaption></figure>
       </div>
       <p style="margin-top:32px;color:var(--muted)">Want every prompt explained? Read the <a href="https://github.com/cccsdh/Dnp.ScriptRunner/blob/main/USER_GUIDE.md">User Guide</a>.</p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Frequently asked questions</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary><h3>How do I run SQL scripts from the command line?</h3></summary>
+          <p>Pass three arguments: the database type, the connection string and the scripts directory, for example <code>Dnp.ScriptRunner.exe PostgreSQL "Host=localhost;Database=mydb;..." "C:\scripts"</code>. ScriptRunner skips the interactive prompts and runs the scripts in that folder, which makes it suitable for CI/CD pipelines.</p>
+        </details>
+        <details>
+          <summary><h3>Which databases does ScriptRunner support?</h3></summary>
+          <p>PostgreSQL, Microsoft SQL Server, MySQL, Oracle, IBM DB2 and SQLite.</p>
+        </details>
+        <details>
+          <summary><h3>How do I generate a CREATE script from an existing database?</h3></summary>
+          <p>In interactive mode, choose a connection and answer <strong>Yes</strong> to “Generate a schema create script for this connection?”. ScriptRunner writes a single <code>.sql</code> file containing <code>CREATE SCHEMA</code>, <code>CREATE TABLE</code> (with keys, constraints and indexes), views, functions, stored procedures and triggers, built with the database's own DDL reflection.</p>
+        </details>
+        <details>
+          <summary><h3>Can ScriptRunner export table data as INSERT statements?</h3></summary>
+          <p>Yes. When generating a schema create script you can choose to include an <code>INSERT INTO</code> statement for every existing row. Values are formatted by column type, and SQL Server identity columns are wrapped in <code>SET IDENTITY_INSERT</code>.</p>
+        </details>
+        <details>
+          <summary><h3>What types of script files can it run?</h3></summary>
+          <p>ScriptRunner runs <code>.sql</code> and <code>.txt</code> script files from the folder you choose.</p>
+        </details>
+        <details>
+          <summary><h3>Is ScriptRunner free?</h3></summary>
+          <p>Yes. ScriptRunner is open source under the MIT License. The prebuilt release is for Windows x64 and needs the .NET 8 runtime; you can also build it from source with the .NET 8 SDK.</p>
+        </details>
+      </div>
     </div>
   </section>
 

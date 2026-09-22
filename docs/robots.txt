@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cccsdh.github.io/Dnp.ScriptRunner/sitemap.xml
