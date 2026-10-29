@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ScriptRunner\Dnp.ScriptRunner.csproj" />
+    <ProjectReference Include="..\ScriptRunner.Core\Dnp.ScriptRunner.Core.csproj" />
   </ItemGroup>
 
 </Project>

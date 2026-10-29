@@ -235,7 +235,7 @@ namespace Dnp.ScriptRunner
                 for (var i = 0; i < reader.FieldCount; i++)
                 {
                     var raw = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                    values.Add(Helpers.FormatSqlLiteral(NormalizeOracleValue(raw), SqlLiteralProvider.Oracle));
+                    values.Add(SqlHelpers.FormatSqlLiteral(NormalizeOracleValue(raw), SqlLiteralProvider.Oracle));
                 }
                 sb.AppendLine($"INSERT INTO {quotedTableName} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)});");
                 rowCount++;

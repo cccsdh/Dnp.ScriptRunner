@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ScriptRunner – SQL Script Runner &amp; Schema Generator for .NET</title>
-  <meta name="description" content="Free, open-source SQL script runner for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite. Run scripts from the command line or CI/CD, and generate schema create scripts (DDL) from a live database.">
-  <meta name="keywords" content="SQL script runner, run SQL scripts command line, database migration tool, generate create script from database, schema DDL generator, PostgreSQL, SQL Server, MySQL, Oracle, DB2, SQLite, .NET 10, CI/CD">
+  <title>ScriptRunner – SQL Script Runner for PostgreSQL, SQL Server, MySQL, Oracle, DB2 &amp; SQLite</title>
+  <meta name="description" content="Free, open-source SQL script runner for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite. Run SQL scripts from an interactive UI, the command line and CI/CD, or call it from your own .NET code. Generates schema create scripts too.">
+  <meta name="keywords" content="SQL script runner, run SQL scripts, run SQL scripts command line, run SQL scripts from C#, execute SQL files .NET, multi-database script runner, database script runner, SQL script executor, database migration tool, CI/CD database deployment, generate create script from database, schema DDL generator, PostgreSQL script runner, SQL Server script runner, MySQL script runner, Oracle script runner, DB2 script runner, SQLite script runner, .NET library, .NET 10">
   <meta name="author" content="S. Doug Hunt">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://cccsdh.github.io/Dnp.ScriptRunner/">
@@ -15,15 +15,15 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ScriptRunner">
   <meta property="og:url" content="https://cccsdh.github.io/Dnp.ScriptRunner/">
-  <meta property="og:title" content="ScriptRunner – SQL Script Runner &amp; Schema Generator">
-  <meta property="og:description" content="Free, open-source .NET 10 tool to run SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite, and generate schema create scripts from a live database.">
+  <meta property="og:title" content="ScriptRunner – SQL Script Runner for 6 Databases: UI, CLI or .NET Library">
+  <meta property="og:description" content="Free, open-source SQL script runner for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite. Run scripts interactively, from the command line and CI/CD, or directly from your own .NET programs, and generate schema create scripts from a live database.">
   <meta property="og:image" content="https://cccsdh.github.io/Dnp.ScriptRunner/images/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="ScriptRunner: run SQL scripts and generate schema create scripts for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="ScriptRunner – SQL Script Runner &amp; Schema Generator">
-  <meta name="twitter:description" content="Run SQL scripts from the console or CI/CD and generate schema create scripts from a live database. Six providers, free and open source.">
+  <meta name="twitter:title" content="ScriptRunner – SQL Script Runner for 6 Databases: UI, CLI or .NET Library">
+  <meta name="twitter:description" content="Run SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite from an interactive UI, the command line, or your own .NET code. Free and open source.">
   <meta name="twitter:image" content="https://cccsdh.github.io/Dnp.ScriptRunner/images/og-image.png">
 
   <script type="application/ld+json">
@@ -32,7 +32,8 @@
     "@type": "SoftwareApplication",
     "name": "ScriptRunner",
     "alternateName": "Dnp.ScriptRunner",
-    "description": "A .NET 10 console application for running SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite in a reproducible, auditable way, with interactive and command-line (CI/CD) modes and schema create script (DDL) generation from a live database.",
+    "description": "A free, open-source SQL script runner for PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite. Run SQL scripts in a reproducible, auditable way from an interactive console UI, a non-interactive command line for CI/CD, or directly from your own .NET applications through the Dnp.ScriptRunner.Core library, and generate schema create scripts (DDL) from a live database.",
+    "keywords": "SQL script runner, run SQL scripts, multi-database, command line, CI/CD, .NET library, PostgreSQL, SQL Server, MySQL, Oracle, DB2, SQLite, schema generator",
     "url": "https://cccsdh.github.io/Dnp.ScriptRunner/",
     "applicationCategory": "DeveloperApplication",
     "applicationSubCategory": "Database tool",
@@ -54,11 +55,14 @@
     "sameAs": ["https://github.com/cccsdh/Dnp.ScriptRunner"],
     "featureList": [
       "Run one-off or batched SQL scripts",
-      "Non-interactive command-line mode for CI/CD pipelines",
-      "Capture stdout, stderr and exit codes",
+      "Supports PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite",
+      "Interactive console UI with saved connections and script folders",
+      "Non-interactive command-line mode with exit codes for CI/CD pipelines",
+      "Embeddable .NET library (Dnp.ScriptRunner.Core) to run SQL scripts from your own code",
+      "Script lists, GO batch separators and embedded JSON/XML/text files",
+      "Timestamped run logs",
       "Generate schema create scripts (DDL) from a live database",
-      "Optional INSERT statements for existing table data",
-      "Supports PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite"
+      "Optional INSERT statements for existing table data"
     ]
   }
   </script>
@@ -67,6 +71,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
     "name": "ScriptRunner",
+    "description": "Source for the ScriptRunner console app and the Dnp.ScriptRunner.Core .NET library for running SQL scripts against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite.",
     "codeRepository": "https://github.com/cccsdh/Dnp.ScriptRunner",
     "programmingLanguage": "C#",
     "runtimePlatform": ".NET 10",
@@ -84,7 +89,23 @@
       "name": "How do I run SQL scripts from the command line?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Pass three arguments: the database type, the connection string and the scripts directory, for example Dnp.ScriptRunner.exe PostgreSQL \"Host=localhost;Database=mydb;...\" \"C:\\scripts\" on Windows, or ./Dnp.ScriptRunner PostgreSQL \"Host=localhost;Database=mydb;...\" \"/home/me/scripts\" on Linux. ScriptRunner skips the interactive prompts and runs the scripts in that folder, which makes it suitable for CI/CD pipelines."
+        "text": "Pass the database type, the connection string and the scripts directory, optionally followed by specific files, for example Dnp.ScriptRunner.exe PostgreSQL \"Host=localhost;Database=mydb;...\" \"C:\\scripts\" on Windows, or ./Dnp.ScriptRunner PostgreSQL \"Host=localhost;Database=mydb;...\" \"/home/me/scripts\" on Linux. ScriptRunner runs without any prompts, stops at the first failed statement and returns a non-zero exit code on failure, which makes it suitable for CI/CD pipelines and for other programs that start it as a process."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I run SQL scripts from my own C# or .NET application?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. The engine is a .NET class library, Dnp.ScriptRunner.Core, with no console dependency. Reference it and call SqlScriptRunner.RunAsync with a database provider, a connection string and a scripts folder or file list. You get progress events, a per-failure error callback (continue, skip the file or stop) and a result with every failed statement. RunSqlAsync runs inline SQL and GenerateSchemaScript returns a schema create script."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can one tool run SQL scripts against several different databases?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. ScriptRunner runs the same script folders and script lists against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite using each database's native .NET driver, from the interactive UI, the command line or the .NET library."
       }
     },
     {
@@ -116,7 +137,7 @@
       "name": "What types of script files can it run?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "ScriptRunner runs .sql and .txt script files from the folder you choose."
+        "text": "ScriptRunner runs .sql files (with optional GO batch separators) and .txt script lists that name other scripts or nest further lists with >>. Statements can embed JSON, XML or text files with <DnPJson>, <DnPXml> and <DnPTxt> tags. From the .NET library you can also run inline SQL strings."
       }
     },
     {
@@ -360,7 +381,7 @@
     .faq summary { cursor: pointer; list-style: none; padding: 16px 28px 16px 0; position: relative; }
     .faq summary::-webkit-details-marker { display: none; }
     .faq summary::after { content: "+"; position: absolute; right: 0; top: 14px; font-size: 20px; color: var(--accent); }
-    .faq details[open] summary::after { content: "2"; }
+    .faq details[open] summary::after { content: "\2212"; }
     .faq summary h3 { display: inline; margin: 0; font-size: 16px; font-weight: 600; }
     .faq details p { margin: 0 0 18px; color: var(--muted); font-size: 15px; }
 
@@ -382,6 +403,7 @@
     <nav>
       <a class="opt" href="#features">Features</a>
       <a class="opt" href="#quick-start">Quick start</a>
+      <a class="opt" href="#library">.NET library</a>
       <a class="opt" href="#schema">Schema scripts</a>
       <a class="opt" href="#screens">Screens</a>
       <a class="opt" href="#faq">FAQ</a>
@@ -393,9 +415,9 @@
 <main id="top">
   <div class="hero">
     <div class="wrap">
-      <span class="eyebrow">.NET 10 &middot; MIT licensed</span>
+      <span class="eyebrow">UI &middot; CLI &middot; .NET library &middot; MIT licensed</span>
       <h1>Run SQL scripts<br><span class="hl">the same way, every time.</span></h1>
-      <p class="lede">ScriptRunner is a free, open-source SQL script runner for <strong>PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite</strong>. Run scripts interactively or from the command line in CI/CD pipelines, and generate a full schema create script from any live database.</p>
+      <p class="lede">ScriptRunner is a free, open-source SQL script runner for <strong>PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite</strong>. Run scripts from an interactive console UI, from the command line in CI/CD pipelines, or directly from your own .NET programs, and generate a full schema create script from any live database.</p>
       <div class="cta">
         <a class="btn primary dl" data-asset="win-x64" href="https://github.com/cccsdh/Dnp.ScriptRunner/releases/latest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -432,17 +454,22 @@
         <div class="card">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
           <h3>One-off or batched runs</h3>
-          <p>Pick a scripts folder, choose the files you want, and run them in order. The folder can hold <code>.sql</code> and <code>.txt</code> scripts.</p>
+          <p>Pick a scripts folder, choose the files you want, and run them in order. Use <code>.sql</code> files with <code>GO</code> batches, or <code>.txt</code> script lists that nest other lists.</p>
         </div>
         <div class="card">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div>
           <h3>Auditable results</h3>
-          <p>Stdout, stderr and exit codes are captured and saved, so every run leaves a record.</p>
+          <p>Every statement's outcome is written to a timestamped run log, so every run leaves a record.</p>
         </div>
         <div class="card">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
-          <h3>CI/CD ready</h3>
-          <p>Pass three arguments to skip the interactive prompts entirely and run straight from a pipeline.</p>
+          <h3>CI/CD ready command line</h3>
+          <p>Pass the database type, connection string and folder (plus optional file names) to run with no prompts. Exit codes report success or failure to your pipeline.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+          <h3>Embeddable .NET library</h3>
+          <p>Call <code>SqlScriptRunner.RunAsync</code> from your own app, service or test fixture. Same engine as the console app, with progress events and error callbacks.</p>
         </div>
         <div class="card">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
@@ -463,7 +490,7 @@
 
       <div style="margin-top:48px">
         <h3 style="margin:0 0 4px;font-size:18px">Supported databases</h3>
-        <p style="margin:0 0 12px;color:var(--muted);font-size:15px">One tool for every database you work with, using each provider's native .NET data driver.</p>
+        <p style="margin:0 0 12px;color:var(--muted);font-size:15px">One SQL script runner for every database you work with, using each provider's native .NET data driver, whether you run it from the UI, the command line or your own code.</p>
         <div class="providers">
           <span>PostgreSQL</span><span>SQL Server</span><span>SQLite</span><span>MySQL</span><span>Oracle</span><span>DB2</span>
         </div>
@@ -493,24 +520,70 @@ dotnet build --configuration Release</code></pre></div>
         </div>
         <div class="step">
           <h3>3. Or run non-interactively from the command line</h3>
-          <p>Supply the database type, connection string and scripts directory, and ScriptRunner skips the prompts and processes the folder straight away.</p>
-          <div class="code"><button class="copy" type="button">Copy</button><pre><code><span class="c"># &lt;DatabaseType&gt; "&lt;ConnectionString&gt;" "&lt;ScriptsDirectory&gt;"</span>
+          <p>Supply the database type, connection string and scripts directory, optionally followed by the files to run. ScriptRunner never prompts, so CI/CD pipelines, scheduled jobs and other programs can start it as a process.</p>
+          <div class="code"><button class="copy" type="button">Copy</button><pre><code><span class="c"># &lt;DatabaseType&gt; "&lt;ConnectionString&gt;" "&lt;ScriptsDirectory&gt;" [file ...]</span>
 <span class="c"># Windows</span>
 dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">PostgreSQL</span> <span class="s">"Host=localhost;Username=app;Password=pass;Database=mydb"</span> <span class="s">"C:\scripts"</span>
 <span class="c"># Linux</span>
-dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">PostgreSQL</span> <span class="s">"Host=localhost;Username=app;Password=pass;Database=mydb"</span> <span class="s">"/home/me/scripts"</span></code></pre></div>
+dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">PostgreSQL</span> <span class="s">"Host=localhost;Username=app;Password=pass;Database=mydb"</span> <span class="s">"/home/me/scripts"</span> 01_schema.sql release.txt</code></pre></div>
           <ul class="args">
             <li><code>DatabaseType</code>: one of <code>PostgreSQL</code>, <code>SqlServer</code>, <code>Sqlite</code>, <code>MySQL</code>, <code>Oracle</code>, <code>DB2</code></li>
             <li><code>ConnectionString</code>: the full connection string for the provider (quote it if it contains spaces)</li>
             <li><code>ScriptsDirectory</code>: full path to the folder of <code>.sql</code> and <code>.txt</code> scripts</li>
+            <li><code>file ...</code> (optional): specific scripts to run, in order. Without them, every script in the folder runs in name order.</li>
           </ul>
-          <p style="margin-top:12px">In CLI mode, the connection string and scripts directory are saved to Settings if they aren't already there.</p>
+          <p style="margin-top:12px">The run stops at the first failed statement and exits with <code>0</code> on success, <code>1</code> on a failed statement, <code>2</code> for an unknown database type, <code>3</code> if the folder is missing and <code>5</code> on a fatal error such as a connection failure. The connection string and scripts directory are saved to Settings if they aren't already there.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="schema" class="alt">
+  <section id="library" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Run SQL scripts from your own .NET code</h2>
+        <p>The engine behind the UI and CLI is a class library, <code>Dnp.ScriptRunner.Core</code>, with no console dependency. Call it from an ASP.NET Core startup, a worker service, a deployment tool or an integration-test fixture.</p>
+      </div>
+      <div class="split">
+        <div>
+          <div class="code"><button class="copy" type="button">Copy</button><pre><code><span class="k">using</span> Dnp.ScriptRunner;
+
+<span class="k">var</span> result = <span class="k">await</span> SqlScriptRunner.RunAsync(
+    <span class="k">new</span> ScriptRunOptions(DatabaseProvider.PostgreSQL, connectionString)
+    {
+        ScriptDirectory = <span class="s">"/srv/app/sql"</span>,
+        OnError = failed =&gt; ScriptErrorAction.Stop,
+        OnEvent = e =&gt; logger.LogInformation(e.Message)
+    });
+
+<span class="k">if</span> (!result.Success)
+    <span class="k">throw new</span> Exception(result.Failures[0].Error);
+
+<span class="c">// Inline SQL and schema scripts are one call each</span>
+<span class="k">await</span> SqlScriptRunner.RunSqlAsync(options, <span class="s">"CREATE TABLE ..."</span>);
+<span class="k">string</span> ddl = SqlScriptRunner.GenerateSchemaScript(
+    DatabaseProvider.SqlServer, connectionString, includeData: <span class="k">true</span>);</code></pre></div>
+        </div>
+        <div>
+          <ul class="check" style="margin-top:0">
+            <li>Same six providers: PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite</li>
+            <li>Run a whole folder, an ordered file list, <code>.txt</code> script lists or an inline SQL string</li>
+            <li>Decide what happens on each failure: continue, skip the file or stop</li>
+            <li>Progress events and an optional <code>TextWriter</code> run log</li>
+            <li>A result object with counts, timings and every failed statement's SQL and error</li>
+            <li>Cancellation with a standard <code>CancellationToken</code></li>
+            <li>Never prompts, and never writes files you didn't ask for</li>
+          </ul>
+          <div class="code" style="margin-top:20px"><button class="copy" type="button">Copy</button><pre><code><span class="c"># Reference from source, or pack as a NuGet package</span>
+dotnet add reference ScriptRunner.Core/Dnp.ScriptRunner.Core.csproj
+dotnet pack ScriptRunner.Core -c Release -o ./nupkg</code></pre></div>
+          <p style="margin-top:12px;color:var(--muted);font-size:15px">Full API reference: <a href="https://github.com/cccsdh/Dnp.ScriptRunner/blob/main/ScriptRunner.Core/README.md">ScriptRunner.Core README</a>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="schema">
     <div class="wrap">
       <div class="section-head">
         <h2>Generate a create script from an existing database</h2>
@@ -564,7 +637,7 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">P
     </div>
   </section>
 
-  <section id="screens">
+  <section id="screens" class="alt">
     <div class="wrap">
       <div class="section-head">
         <h2>Screenshots: a tour of the prompts</h2>
@@ -590,7 +663,15 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">P
       <div class="faq">
         <details>
           <summary><h3>How do I run SQL scripts from the command line?</h3></summary>
-          <p>Pass three arguments: the database type, the connection string and the scripts directory, for example <code>Dnp.ScriptRunner.exe PostgreSQL "Host=localhost;Database=mydb;..." "C:\scripts"</code> on Windows, or <code>./Dnp.ScriptRunner PostgreSQL "Host=localhost;Database=mydb;..." "/home/me/scripts"</code> on Linux. ScriptRunner skips the interactive prompts and runs the scripts in that folder, which makes it suitable for CI/CD pipelines.</p>
+          <p>Pass the database type, the connection string and the scripts directory, optionally followed by specific files, for example <code>Dnp.ScriptRunner.exe PostgreSQL "Host=localhost;Database=mydb;..." "C:\scripts"</code> on Windows, or <code>./Dnp.ScriptRunner PostgreSQL "Host=localhost;Database=mydb;..." "/home/me/scripts"</code> on Linux. ScriptRunner runs without any prompts, stops at the first failed statement and returns a non-zero exit code on failure, which makes it suitable for CI/CD pipelines and for other programs that start it as a process.</p>
+        </details>
+        <details>
+          <summary><h3>Can I run SQL scripts from my own C# or .NET application?</h3></summary>
+          <p>Yes. The engine is a .NET class library, <code>Dnp.ScriptRunner.Core</code>, with no console dependency. Reference it and call <code>SqlScriptRunner.RunAsync</code> with a database provider, a connection string and a scripts folder or file list. You get progress events, a per-failure error callback (continue, skip the file or stop) and a result with every failed statement. <code>RunSqlAsync</code> runs inline SQL and <code>GenerateSchemaScript</code> returns a schema create script.</p>
+        </details>
+        <details>
+          <summary><h3>Can one tool run SQL scripts against several different databases?</h3></summary>
+          <p>Yes. ScriptRunner runs the same script folders and script lists against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite using each database's native .NET driver, from the interactive UI, the command line or the .NET library.</p>
         </details>
         <details>
           <summary><h3>Which databases does ScriptRunner support?</h3></summary>
@@ -606,7 +687,7 @@ dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <span class="k">P
         </details>
         <details>
           <summary><h3>What types of script files can it run?</h3></summary>
-          <p>ScriptRunner runs <code>.sql</code> and <code>.txt</code> script files from the folder you choose.</p>
+          <p>ScriptRunner runs <code>.sql</code> files (with optional <code>GO</code> batch separators) and <code>.txt</code> script lists that name other scripts or nest further lists with <code>&gt;&gt;</code>. Statements can embed JSON, XML or text files with <code>&lt;DnPJson&gt;</code>, <code>&lt;DnPXml&gt;</code> and <code>&lt;DnPTxt&gt;</code> tags. From the .NET library you can also run inline SQL strings.</p>
         </details>
         <details>
           <summary><h3>Is ScriptRunner free?</h3></summary>

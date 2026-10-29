@@ -1,6 +1,6 @@
 # ScriptRunner User Guide
 
-This guide walks through using ScriptRunner interactively, including the new schema create script feature. The screens below are **simulated terminal output** (text mockups of what Spectre.Console renders), not real screen captures — they're here to show the shape and order of each prompt.
+This guide walks through using ScriptRunner interactively, including the schema create script feature, then covers [CLI mode](#5-non-interactive-cli-mode) and [calling ScriptRunner from your own program](#6-calling-scriptrunner-from-your-own-program). The screens below are **simulated terminal output** (text mockups of what Spectre.Console renders), not real screen captures — they're here to show the shape and order of each prompt.
 
 
 ---
@@ -61,7 +61,7 @@ Connection opened.
 ? Generate a schema create script for this connection? [y/n] (n):
 ```
 
-- Answer **`n`** (or press Enter, since No is the default) to go run scripts against the database as usual — see [4A. Running scripts](#4a-running-scripts-existing-flow).
+- Answer **`n`** (or press Enter, since No is the default) to go run scripts against the database as usual — see [4A. Running scripts](#4a-running-scripts).
 - Answer **`y`** to generate a schema/DDL script instead — see [4B. Generating a schema create script](#4b-generating-a-schema-create-script).
 
 ---
@@ -87,29 +87,43 @@ Then which files in that folder to run, with checkboxes:
   [x] 004_add_indexes.sql
 ```
 
-ScriptRunner then opens the connection, queues each selected file, and streams progress as it runs:
+ScriptRunner then queues each selected file, opens the connection, and streams progress as it runs:
 
 ```
-Connection opened.
 (1/3) Queuing 001_create_tables.sql
+(2/3) Queuing 002_seed_lookup_data.sql
+(3/3) Queuing 004_add_indexes.sql
+Opening connection...
+Connection opened.
 Executing SQL file: 001_create_tables.sql
  OK Statement 1/4
  OK Statement 2/4
  OK Statement 3/4
  OK Statement 4/4
-(2/3) Queuing 002_seed_lookup_data.sql
 Executing SQL file: 002_seed_lookup_data.sql
  OK Statement 1/1
-(3/3) Queuing 004_add_indexes.sql
 Executing SQL file: 004_add_indexes.sql
  OK Statement 1/2
  OK Statement 2/2
 
-All selected scripts processed.
+All selected scripts processed. 7 statement(s) succeeded, 0 failed in 1.4s.
 Run log written to C:\scripts\orders-migrations\script-run-results-20260915_101512.log
 
 ? Do you want to open the run results now? [y/n] (y):
 ```
+
+If a statement fails, the error is shown and you choose how to carry on:
+
+```
+ ERROR Statement 2/4: relation "orders" already exists
+> Continue
+  Skip File
+  Stop
+```
+
+- **Continue** runs the next statement.
+- **Skip File** skips the rest of the current `.sql` file and moves on to the next file.
+- **Stop** ends the run; the summary reports it as stopped.
 
 ---
 
@@ -201,11 +215,50 @@ GO
 
 ## 5. Non-interactive (CLI) mode
 
-The schema-generation prompts only appear in interactive mode. Running ScriptRunner with three arguments (database type, connection string, scripts directory) always goes straight to running scripts, bypassing every prompt above:
+Running ScriptRunner with three or more arguments (database type, connection string, scripts directory, then optionally the files to run) skips every prompt above, so it can be started by CI/CD pipelines, scheduled tasks or any other program:
 
 ```bash
+# Every .sql/.txt file in the folder, in name order
 ./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts"
+
+# Only the named files, in the order given
+./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts" 001_create_tables.sql 004_add_indexes.sql
 ```
+
+In CLI mode:
+
+- No file-selection, error or "open the results" prompts are shown, so the process never waits for input.
+- The run stops at the first failed statement.
+- The run log is still written to the scripts directory.
+- The exit code tells the caller what happened: `0` success, `1` statement failure or cancellation, `2` unknown database type, `3` scripts directory not found, `5` fatal error (such as a connection failure).
+
+Schema generation is only offered interactively; from code, use `SqlScriptRunner.GenerateSchemaScript` (see below).
+
+---
+
+## 6. Calling ScriptRunner from your own program
+
+Everything the console app does is available as a .NET library, `Dnp.ScriptRunner.Core`, with no prompts or console output. Reference `ScriptRunner.Core/Dnp.ScriptRunner.Core.csproj` (or a package built with `dotnet pack ScriptRunner.Core`) and call:
+
+```csharp
+using Dnp.ScriptRunner;
+
+var result = await SqlScriptRunner.RunAsync(
+    new ScriptRunOptions(DatabaseProvider.SqlServer, connectionString)
+    {
+        ScriptDirectory = @"C:\scripts\orders-migrations",
+        Files = { "001_create_tables.sql", "004_add_indexes.sql" },  // omit to run the whole folder
+        OnError = failed => ScriptErrorAction.SkipFile,              // the same choices as the interactive prompt
+        OnEvent = e => logger.LogInformation(e.Message)
+    });
+
+if (!result.Success) { /* result.Failures lists the file, statement number, SQL and error */ }
+
+// Schema create script, the same output as section 4B
+string ddl = SqlScriptRunner.GenerateSchemaScript(DatabaseProvider.SqlServer, connectionString, includeData: true);
+```
+
+`RunSqlAsync` runs a string of SQL instead of files. See [ScriptRunner.Core/README.md](ScriptRunner.Core/README.md) for the full API.
 
 ---
 

@@ -73,6 +73,12 @@ jobs:
         run: |
           Compress-Archive -Path ./artifacts/publish-win-x64/* -DestinationPath "./artifacts/ScriptRunner-win-x64-$env:VERSION.zip"
 
+      # The Core library is platform-neutral, so only this workflow packs it.
+      - name: Pack library NuGet package
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: dotnet pack ScriptRunner.Core/Dnp.ScriptRunner.Core.csproj --configuration Release --no-build -p:Version="$VERSION" -o ./artifacts/nupkg
+
       - name: Create or update GitHub release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
@@ -85,7 +91,7 @@ jobs:
           gh release create "$tag" --target "$GITHUB_SHA" --title "Release $VERSION" \
             --notes "Automated release created by CI for version $VERSION." \
             || gh release view "$tag" > /dev/null
-          gh release upload "$tag" "./artifacts/ScriptRunner-win-x64-$VERSION.zip" --clobber
+          gh release upload "$tag" "./artifacts/ScriptRunner-win-x64-$VERSION.zip" ./artifacts/nupkg/*.nupkg --clobber
 
       - name: Prune old releases (keep last 5)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Dnp.ScriptRunner</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Internal types are intentionally undocumented; only warn on the public API surface. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!-- NuGet package metadata (dotnet pack ScriptRunner.Core -c Release) -->
+    <PackageId>Dnp.ScriptRunner.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>S. Doug Hunt</Authors>
+    <Company>Doughnuts Publishing</Company>
+    <Copyright>© 2026 Doughnuts Publishing</Copyright>
+    <Description>Embeddable SQL script runner for .NET. Run .sql files, script lists and inline SQL against PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite from your own application, and generate schema create scripts (DDL and data) from a live database.</Description>
+    <PackageTags>sql;sql-script-runner;database;migration;schema;ddl;postgresql;sqlserver;mysql;oracle;db2;sqlite;devops;ci-cd</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://cccsdh.github.io/Dnp.ScriptRunner/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/cccsdh/Dnp.ScriptRunner</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MySql.Data" Version="9.7.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.8" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.200" />
+    <!-- IBM ships a separate DB2 driver package per OS (Net.IBM.Data.Db2 / Net.IBM.Data.Db2-lnx), both exposing
+         IBM.Data.Db2. The library only compiles against it; the host application references the package for its
+         platform so the matching native client is deployed. -->
+    <PackageReference Include="Net.IBM.Data.Db2" Version="10.0.0.200" IncludeAssets="compile" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

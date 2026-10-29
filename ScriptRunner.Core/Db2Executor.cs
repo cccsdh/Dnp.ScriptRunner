@@ -251,7 +251,7 @@ namespace Dnp.ScriptRunner
                 for (var i = 0; i < reader.FieldCount; i++)
                 {
                     var val = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                    values.Add(Helpers.FormatSqlLiteral(val, SqlLiteralProvider.Db2));
+                    values.Add(SqlHelpers.FormatSqlLiteral(val, SqlLiteralProvider.Db2));
                 }
                 sb.AppendLine($"INSERT INTO {quotedTableName} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)});");
                 rowCount++;

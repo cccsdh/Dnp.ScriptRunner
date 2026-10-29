@@ -18,13 +18,13 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Spectre.Console" Version="0.56.0" />
-    <PackageReference Include="MySql.Data" Version="9.7.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.8" />
-    <PackageReference Include="Npgsql" Version="10.0.3" />
-    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.200" />
   </ItemGroup>
-  <!-- IBM ships a separate DB2 driver package per OS; both expose the IBM.Data.Db2 namespace. -->
+  <ItemGroup>
+    <!-- The script engine and database providers live in the Dnp.ScriptRunner.Core library. -->
+    <ProjectReference Include="..\ScriptRunner.Core\Dnp.ScriptRunner.Core.csproj" />
+  </ItemGroup>
+  <!-- IBM ships a separate DB2 driver package per OS; both expose the IBM.Data.Db2 namespace. The Core library only
+       compiles against it, so the app supplies the runtime driver for its platform. -->
   <ItemGroup Condition="$(RuntimeIdentifier.StartsWith('linux'))">
     <PackageReference Include="Net.IBM.Data.Db2-lnx" Version="10.0.0.200" />
   </ItemGroup>

@@ -3,19 +3,30 @@
 [![Windows Build and Release](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-windows.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-windows.yml)
 [![Linux Build and Release](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-linux.yml/badge.svg)](https://github.com/cccsdh/Dnp.ScriptRunner/actions/workflows/build-linux.yml)
 
-ScriptRunner is a .NET 10 application for executing and managing scripts in a reproducible, auditable way. It provides a lightweight framework to run scripts, manage execution context, and capture results for automation and operational tasks.
+ScriptRunner is a free, open-source **SQL script runner** for **PostgreSQL, SQL Server, MySQL, Oracle, IBM DB2 and SQLite**, built on .NET 10. Use it three ways, all backed by the same engine:
 
-For a walkthrough of every interactive prompt, including the schema create script feature, see the [User Guide](USER_GUIDE.md).
+| Mode | Use it for |
+|---|---|
+| **Interactive console UI** | Pick a database, a saved connection and the scripts to run from keyboard-driven menus. |
+| **Command line (CLI)** | Run a folder or a list of scripts with no prompts, from CI/CD pipelines, scheduled jobs or other programs, with meaningful exit codes. |
+| **.NET library** (`Dnp.ScriptRunner.Core`) | Call `SqlScriptRunner.RunAsync(...)` directly from your own application: migrations at startup, deployment tools, integration-test fixtures. |
+
+It runs `.sql` files, `.txt` script lists and inline SQL in a reproducible, auditable way, and can generate a schema create script (DDL, optionally with data) from any live database.
+
+For a walkthrough of every interactive prompt, including the schema create script feature, see the [User Guide](USER_GUIDE.md). For the library API, see [ScriptRunner.Core/README.md](ScriptRunner.Core/README.md).
 
 
 ## Key features
 
-- .NET 10 application for Windows x64 and Linux x64
-- Run one-off or batched scripts
-- Capture and persist stdout/stderr and exit codes
-- Designed to integrate with CI/CD pipelines
+- One SQL script runner for six database providers: PostgreSQL, SQL Server, MySQL, Oracle, DB2 and SQLite
+- Three ways to run: interactive console UI, non-interactive CLI, or direct calls from your own .NET code
+- Run one-off or batched scripts, `.txt` script lists with nested `>>` references, and `GO`-separated batches
+- Embed JSON, XML or text files into statements with `<DnPJson>`, `<DnPXml>` and `<DnPTxt>` tags
+- Timestamped run log for every run; CLI exit codes for CI/CD pipelines
+- Choose to stop, skip the file, or continue when a statement fails (prompted, or via a callback in the library)
 - Generate a schema create script (DDL) directly from a live database connection, for any supported provider
 - Optionally include INSERT statements for existing table data alongside the generated schema
+- Windows x64 and Linux x64
 
 ## Requirements
 
@@ -24,10 +35,11 @@ For a walkthrough of every interactive prompt, including the schema create scrip
 
 ## Download
 
-Each release on the [Releases](https://github.com/cccsdh/Dnp.ScriptRunner/releases) page has one download per platform:
+Each release on the [Releases](https://github.com/cccsdh/Dnp.ScriptRunner/releases) page has one download per platform, plus the library package:
 
 - Windows x64: `ScriptRunner-win-x64-<version>.zip`, run `Dnp.ScriptRunner.exe`
 - Linux x64: `ScriptRunner-linux-x64-<version>.tar.gz`, extract with `tar -xzf` and run `./Dnp.ScriptRunner`
+- .NET library: `Dnp.ScriptRunner.Core.<version>.nupkg`, add it to a local NuGet feed to call ScriptRunner from your own code (see [Use as a library](#use-as-a-library-call-from-your-own-programs))
 
 Each platform is built and released by its own GitHub Actions workflow (`build-windows.yml` and `build-linux.yml`). Both publish into the same release for a given commit.
 
@@ -47,7 +59,7 @@ dotnet publish ./ScriptRunner/Dnp.ScriptRunner.csproj -c Release -r win-x64 --se
 dotnet publish ./ScriptRunner/Dnp.ScriptRunner.csproj -c Release -r linux-x64 --self-contained false -o ./publish/linux-x64
 ```
 
-The DB2 driver comes from a different IBM package on each platform (`Net.IBM.Data.Db2` on Windows, `Net.IBM.Data.Db2-lnx` on Linux). The project picks the right one from the runtime identifier.
+The DB2 driver comes from a different IBM package on each platform (`Net.IBM.Data.Db2` on Windows, `Net.IBM.Data.Db2-lnx` on Linux). The console project picks the right one from the runtime identifier; the Core library only compiles against it.
 
 ## Run
 
@@ -71,32 +83,90 @@ Paths inside scripts (`.txt` list entries and embedded file tags such as `<DnPTx
 
 ## Command-line (non-interactive) mode
 
-ScriptRunner can be started non-interactively by providing three arguments: the database type, the connection string, and the scripts directory. When invoked with these parameters the application will bypass the interactive UI prompts and immediately start processing scripts in the provided directory.
+ScriptRunner runs without any prompts when given at least three arguments: the database type, the connection string and the scripts directory. Any further arguments name specific files to run; without them, every `.sql` and `.txt` file in the directory runs in name order. This makes it easy to call from CI/CD pipelines, scheduled tasks, shell scripts or any other program that can start a process.
 
 Usage:
 
 ```bash
-dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
+dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>" [file ...]
 ```
 
 Or after building the binary (on Linux, use `linux-x64/Dnp.ScriptRunner`):
 
 ```bash
-./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>"
+./ScriptRunner/bin/Release/net10.0/win-x64/Dnp.ScriptRunner.exe <DatabaseType> "<ConnectionString>" "<ScriptsDirectory>" [file ...]
 ```
 
 Arguments:
-- DatabaseType: One of PostgreSQL, SqlServer, Sqlite, MySQL, Oracle, DB2
+- DatabaseType: One of PostgreSQL, SqlServer, Sqlite, MySQL, Oracle, DB2 (case-insensitive)
 - ConnectionString: The full connection string for the selected provider (wrap in quotes if it contains spaces)
 - ScriptsDirectory: Full path to the folder containing .sql and .txt scripts to execute
+- file (optional): One or more `.sql` / `.txt` files to run, in order, relative to ScriptsDirectory or absolute
 
-Example:
+Examples:
 
 ```bash
+# Run everything in the folder
 dotnet run --project ./ScriptRunner/Dnp.ScriptRunner.csproj -- PostgreSQL "Host=localhost;Username=app;Password=pass;Database=mydb" "C:\scripts"
+
+# Run two specific files
+./Dnp.ScriptRunner SqlServer "Server=.;Database=app;Trusted_Connection=True;TrustServerCertificate=True" /srv/sql 01_schema.sql release.txt
 ```
 
+In CLI mode the run stops at the first failed statement. A timestamped `script-run-results-<timestamp>.log` is written to the scripts directory, and the process exits with:
+
+| Exit code | Meaning |
+|---|---|
+| `0` | All statements succeeded (or there was nothing to run) |
+| `1` | One or more statements failed, or the run was cancelled (Ctrl+C) |
+| `2` | Unknown database type |
+| `3` | Scripts directory not found |
+| `5` | Fatal error, such as the connection could not be opened (details in `error_info.json`) |
+
 When run in CLI mode, the application will automatically persist the supplied connection string and scripts directory into Settings if they are not already present.
+
+
+## Use as a library (call from your own programs)
+
+The script engine lives in the `Dnp.ScriptRunner.Core` class library, which has no console or UI dependency. The console app is a thin front end over it, so your own application gets exactly the same behavior:
+
+```csharp
+using Dnp.ScriptRunner;
+
+var result = await SqlScriptRunner.RunAsync(
+    new ScriptRunOptions(DatabaseProvider.PostgreSQL, "Host=localhost;Username=app;Password=pass;Database=mydb")
+    {
+        ScriptDirectory = "/srv/app/sql",                 // all .sql/.txt files, in name order
+        ErrorAction = ScriptErrorAction.Stop,             // or Continue / SkipFile, or decide per failure with OnError
+        OnEvent = e => Console.WriteLine(e.Message)       // progress: file started, statement ok/failed, warnings
+    });
+
+Console.WriteLine($"{result.StatementsSucceeded} ok, {result.StatementsFailed} failed");
+
+// Inline SQL and schema generation are one call each
+await SqlScriptRunner.RunSqlAsync(new ScriptRunOptions(DatabaseProvider.Sqlite, "Data Source=app.db"), "CREATE TABLE IF NOT EXISTS T (Id INTEGER);");
+string ddl = SqlScriptRunner.GenerateSchemaScript(DatabaseProvider.SqlServer, connectionString, includeData: true);
+```
+
+Add it to your project with a project reference, or pack it as a NuGet package:
+
+```bash
+dotnet add reference path/to/Dnp.ScriptRunner/ScriptRunner.Core/Dnp.ScriptRunner.Core.csproj
+# or
+dotnet pack ScriptRunner.Core -c Release -o ./nupkg
+dotnet add package Dnp.ScriptRunner.Core --source ./nupkg
+```
+
+If you use DB2, also add IBM's driver package for your platform (`Net.IBM.Data.Db2` on Windows, `Net.IBM.Data.Db2-lnx` on Linux). The full API reference, options table and more examples are in [ScriptRunner.Core/README.md](ScriptRunner.Core/README.md).
+
+
+## Project layout
+
+| Project | Description |
+|---|---|
+| `ScriptRunner.Core/Dnp.ScriptRunner.Core.csproj` | Class library: the script engine, database providers and schema generation (`SqlScriptRunner`) |
+| `ScriptRunner/Dnp.ScriptRunner.csproj` | Console app: interactive UI and CLI mode, built on the library |
+| `ScriptRunner.Tests/Dnp.ScriptRunner.Tests.csproj` | MSTest unit tests, including end-to-end library tests against SQLite |
 
 
 ## Schema create script generation
