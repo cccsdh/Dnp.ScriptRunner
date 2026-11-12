@@ -81,50 +81,5 @@ namespace Dnp.ScriptRunner
 
             return AnsiConsole.Prompt(prompt);
         }
-
-        public static List<string> ExpandFiles(IEnumerable<string> selectedFiles, string baseDirectory)
-        {
-            var result = new List<string>();
-            var visited = new HashSet<string>(ScriptHelpers.PathComparer);
-            foreach (var f in selectedFiles)
-            {
-                var full = ScriptHelpers.ResolvePath(f, baseDirectory);
-                ExpandRecursive(full, result, visited);
-            }
-            return result;
-        }
-
-        public static void ExpandRecursive(string filePath, List<string> output, HashSet<string> visited)
-        {
-            if (!File.Exists(filePath)) return;
-            if (visited.Contains(filePath)) return;
-            visited.Add(filePath);
-            if (filePath.EndsWith(".sql", StringComparison.OrdinalIgnoreCase))
-            {
-                output.Add(filePath);
-                return;
-            }
-
-            if (filePath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-            {
-                foreach (var line in File.ReadAllLines(filePath))
-                {
-                    var trimmed = line.Trim();
-                    if (string.IsNullOrWhiteSpace(trimmed)) continue;
-                    if (trimmed.StartsWith(">>"))
-                    {
-                        var referenced = trimmed.Substring(2).Trim();
-                        var referencedFull = ScriptHelpers.ResolvePath(referenced, Path.GetDirectoryName(filePath));
-                        ExpandRecursive(referencedFull, output, visited);
-                    }
-                    else
-                    {
-                        var candidate = ScriptHelpers.ResolvePath(trimmed, Path.GetDirectoryName(filePath));
-                        if (File.Exists(candidate) && candidate.EndsWith(".sql", StringComparison.OrdinalIgnoreCase))
-                            output.Add(candidate);
-                    }
-                }
-            }
-        }
     }
 }
